@@ -101,8 +101,9 @@ export function Dashboard() {
     }
   };
 
+  // ✅ CORREÇÃO: formatMoney agora DIVIDE POR 100 (backend retorna centavos)
   const formatMoney = (value) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((value || 0) / 100);
   };
 
   // Função para alternar entre Visão Global e Bot Selecionado

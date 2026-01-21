@@ -217,43 +217,52 @@ export const dashboardService = {
     if (id) params.append('bot_id', id);
     if (startDate) params.append('start_date', startDate.toISOString());
     if (endDate) params.append('end_date', endDate.toISOString());
-    return (await api.get(`/api/admin/dashboard/stats?${params.toString()}`)).data;
+    
+    const queryString = params.toString();
+    const url = queryString ? `/api/admin/dashboard/stats?${queryString}` : '/api/admin/dashboard/stats';
+    
+    return (await api.get(url)).data;
   }
 };
 
-// Serviço de Perfil ADMIN (Sistema)
+// ============================================================
+// 👤 SERVIÇO DE PERFIL (✅ CORRIGIDO - ADICIONADO getStats)
+// ============================================================
 export const profileService = {
   get: async () => (await api.get('/api/admin/profile')).data,
   update: async (data) => (await api.post('/api/admin/profile', data)).data,
-  getStats: async () => (await api.get('/api/profile/stats')).data  // 🆕 ADICIONAR ESTA LINHA
+  getStats: async () => (await api.get('/api/profile/stats')).data  // ✅ MÉTODO ADICIONADO
 };
+
 // ============================================================
 // 🔗 SERVIÇO DE INTEGRAÇÕES E TRACKING
 // ============================================================
 export const integrationService = { 
     getConfig: async () => (await api.get('/api/admin/config')).data,
     saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
-    
-    getPushinStatus: async (botId) => {
-        if (!botId) return { status: 'desconectado' };
-        try { return (await api.get(`/api/admin/integrations/pushinpay/${botId}`)).data; } 
-        catch { return { status: 'desconectado' }; }
-    },
-    
-    savePushinToken: async (botId, token) => (await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token })).data
-};
-
-export const trackingService = {
-  listFolders: async () => (await api.get('/api/admin/tracking/folders')).data,
-  createFolder: async (data) => (await api.post('/api/admin/tracking/folders', data)).data,
-  deleteFolder: async (folderId) => (await api.delete(`/api/admin/tracking/folders/${folderId}`)).data,
-  listLinks: async (folderId) => (await api.get(`/api/admin/tracking/links/${folderId}`)).data,
-  createLink: async (data) => (await api.post('/api/admin/tracking/links', data)).data,
-  deleteLink: async (linkId) => (await api.delete(`/api/admin/tracking/links/${linkId}`)).data
+    installTracker: async () => (await api.post('/api/admin/config/install-tracker')).data,
+    testPixel: async () => (await api.get('/api/admin/config/test-pixel')).data
 };
 
 // ============================================================
-// 💳 SERVIÇO DE PAGAMENTOS
+// 📂 SERVIÇO DE UPLOAD DE MÍDIA
+// ============================================================
+export const mediaService = {
+  upload: async (file, type = 'flow') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    
+    const response = await api.post('/api/admin/media/upload', formData, {
+      headers: {'Content-Type': 'multipart/form-data'}
+    });
+    
+    return response.data;
+  }
+};
+
+// ============================================================
+// 💳 SERVIÇO DE PAGAMENTO
 // ============================================================
 export const paymentService = {
   createPix: async (data) => {
