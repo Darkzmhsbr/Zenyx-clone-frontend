@@ -22,22 +22,25 @@ import {
   ShoppingBag,
   User, 
   Target,
-  Crown // 👑 NOVO: Ícone importado para o Super Admin
+  Crown // 👑 Ícone do Super Admin
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
-import React from 'react';
-import React from 'react';
+
+// -------------------------------------------------------
+// ARQUIVO CORRIGIDO: DUPLICATAS DE IMPORT REMOVIDAS AQUI
+// -------------------------------------------------------
 
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
+  const navigate = useNavigate();
   
-  // 👇 ALTERAÇÃO AQUI: Adicionado 'user' para verificar permissão
+  // Adicionado 'user' para verificar permissão
   const { user, logout } = useAuth();
   
   const currentPath = location.pathname;
   
-  // Estados dos menus (Mantidos originais)
+  // Estados dos menus
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(true);
   const [isExtrasMenuOpen, setIsExtrasMenuOpen] = useState(false);
   const [isOffersMenuOpen, setIsOffersMenuOpen] = useState(false);
@@ -45,6 +48,7 @@ export function Sidebar({ isOpen, onClose }) {
   const handleLogout = () => {
     if (onClose) onClose();
     logout();
+    // Força redirecionamento limpo
     window.location.href = '/login';
   };
 
@@ -89,7 +93,6 @@ export function Sidebar({ isOpen, onClose }) {
         <nav className="sidebar-nav">
           
           {/* 🔥 ÁREA MESTRA (SUPER ADMIN) 🔥 */}
-          {/* 👇 AQUI ESTÁ A MUDANÇA MÁGICA 👇 */}
           {(user?.is_superuser || user?.username === 'AdminZenyx') && (
             <div className="admin-section">
               <div className="admin-section-title">
@@ -106,7 +109,7 @@ export function Sidebar({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* MENU GERAL (MANTIDO INTACTO) */}
+          {/* MENU GERAL */}
           <Link to="/" className={`nav-item ${isActive('/')}`} onClick={onClose}>
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
@@ -140,12 +143,14 @@ export function Sidebar({ isOpen, onClose }) {
                 <Link to="/bots" className={`nav-item ${isActive('/bots')}`} onClick={onClose}>
                   <Zap size={18} /> <span>Gerenciar Bots</span>
                 </Link>
+                {/* ✅ ROTA CORRETA: /bots/new */}
                 <Link to="/bots/new" className={`nav-item ${isActive('/bots/new')}`} onClick={onClose}>
                   <PlusCircle size={18} /> <span>Novo Bot</span>
                 </Link>
               </div>
             )}
           </div>
+
           <Link to="/flow" className={`nav-item ${isActive('/flow')}`} onClick={onClose}>
             <Layers size={20} />
             <span>Flow Chat (Fluxo)</span>
@@ -196,6 +201,10 @@ export function Sidebar({ isOpen, onClose }) {
 
             {isExtrasMenuOpen && (
               <div className="nav-subitems">
+                <Link to="/tutoriais" className={`nav-item ${isActive('/tutoriais')}`} onClick={onClose}>
+                  <BookOpen size={18} /> <span>Tutoriais</span>
+                </Link>
+
                 <Link to="/funcoes/admins" className={`nav-item ${isActive('/funcoes/admins')}`} onClick={onClose}>
                   <ShieldCheck size={18} /> <span>Administradores</span>
                 </Link>
