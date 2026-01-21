@@ -145,7 +145,7 @@ export function Sidebar({ isOpen, onClose }) {
             )}
           </div>
 
-          <Link to="/fluxo" className={`nav-item ${isActive('/fluxo')}`} onClick={onClose}>
+          <Link to="/flow" className={`nav-item ${isActive('/flow')}`} onClick={onClose}>
             <Layers size={20} />
             <span>Flow Chat (Fluxo)</span>
           </Link>
