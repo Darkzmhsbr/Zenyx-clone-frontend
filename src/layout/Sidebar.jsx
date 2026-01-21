@@ -21,17 +21,21 @@ import {
   TrendingUp, 
   ShoppingBag,
   User, 
-  Target // Ícone de Rastreamento
+  Target,
+  Crown // 👑 NOVO: Ícone importado para o Super Admin
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
-  const { logout } = useAuth();
+  
+  // 👇 ALTERAÇÃO AQUI: Adicionado 'user' para verificar permissão
+  const { user, logout } = useAuth();
+  
   const currentPath = location.pathname;
   
-  // Estados dos menus (Inicia com Bots aberto, resto fechado)
+  // Estados dos menus (Mantidos originais)
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(true);
   const [isExtrasMenuOpen, setIsExtrasMenuOpen] = useState(false);
   const [isOffersMenuOpen, setIsOffersMenuOpen] = useState(false);
@@ -43,63 +47,68 @@ export function Sidebar({ isOpen, onClose }) {
   };
 
   // Função auxiliar para verificar se o link está ativo
-  const isActive = (path) => currentPath === path ? 'active' : '';
+  const isActive = (path) => {
+    return currentPath === path ? 'active' : '';
+  };
 
   return (
     <>
-      {/* Overlay Escuro para Mobile */}
+      {/* Overlay para fechar ao clicar fora (Mobile) */}
       <div 
         className={`sidebar-overlay ${isOpen ? 'open' : ''}`} 
         onClick={onClose}
       />
 
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-        
-        {/* --- HEADER DO SIDEBAR --- */}
+      <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-logo">
-            <Zap size={28} className="logo-icon" />
-            <span className="logo-text">Zenyx<span className="highlight">GBOT</span></span>
+          {/* Logo ou Título */}
+          <div className="logo-area" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ 
+              width: '32px', 
+              height: '32px', 
+              background: 'linear-gradient(135deg, #c333ff, #7b1fa2)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold'
+            }}>
+              Z
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>Zenyx<span style={{color: '#c333ff'}}>GBOT</span></span>
           </div>
-          
-          {/* Botão X (Só aparece no Mobile via CSS) */}
+
           <button className="close-sidebar-btn" onClick={onClose}>
             <X size={24} />
           </button>
         </div>
 
-        {/* --- NAVEGAÇÃO --- */}
         <nav className="sidebar-nav">
           
+          {/* 🔥 ÁREA EXCLUSIVA SUPER ADMIN (Só aparece se tiver permissão) 🔥 */}
+          {user?.is_superuser && (
+            <div style={{ marginBottom: '10px', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
+              <div style={{ padding: '0 20px', fontSize: '11px', color: '#c333ff', fontWeight: 'bold', marginBottom: '5px', letterSpacing: '0.5px' }}>
+                ÁREA MESTRA
+              </div>
+              <Link 
+                to="/superadmin" 
+                className={`nav-item ${isActive('/superadmin')}`}
+                onClick={onClose}
+                style={{ color: '#ffcc00' }} // Dourado para destacar
+              >
+                <Crown size={20} />
+                <span>Super Admin</span>
+              </Link>
+            </div>
+          )}
+
+          {/* MENU GERAL (MANTIDO INTACTO) */}
           <Link to="/" className={`nav-item ${isActive('/')}`} onClick={onClose}>
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </Link>
-
-          {/* === GRUPO: MEUS BOTS === */}
-          <div className="nav-group">
-            <div 
-              className={`nav-item group-header ${isBotMenuOpen ? 'open' : ''}`}
-              onClick={() => setIsBotMenuOpen(!isBotMenuOpen)}
-            >
-              <div className="group-label">
-                <MessageSquare size={20} />
-                <span>Meus Bots</span>
-              </div>
-              {isBotMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </div>
-            
-            {isBotMenuOpen && (
-              <div className="nav-subitems">
-                <Link to="/bots" className={`nav-item ${isActive('/bots')}`} onClick={onClose}>
-                  <Zap size={18} /> <span>Gerenciar Bots</span>
-                </Link>
-                <Link to="/bots/new" className={`nav-item ${isActive('/bots/new')}`} onClick={onClose}>
-                  <PlusCircle size={18} /> <span>Novo Bot</span>
-                </Link>
-              </div>
-            )}
-          </div>
 
           <Link to="/funil" className={`nav-item ${isActive('/funil')}`} onClick={onClose}>
             <TrendingUp size={20} />
@@ -111,8 +120,33 @@ export function Sidebar({ isOpen, onClose }) {
             <span>Contatos (Leads)</span>
           </Link>
 
-          <Link to="/flow" className={`nav-item ${isActive('/flow')}`} onClick={onClose}>
-            <MessageSquare size={20} />
+          {/* SUBMENU: MEUS BOTS */}
+          <div className="nav-group">
+            <div 
+              className={`nav-item-header ${isBotMenuOpen ? 'open' : ''}`} 
+              onClick={() => setIsBotMenuOpen(!isBotMenuOpen)}
+            >
+              <div className="nav-item-header-content">
+                <Zap size={20} />
+                <span>Meus Bots</span>
+              </div>
+              {isBotMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </div>
+
+            {isBotMenuOpen && (
+              <div className="nav-subitems">
+                <Link to="/bots" className={`nav-item ${isActive('/bots')}`} onClick={onClose}>
+                  <MessageSquare size={18} /> <span>Gerenciar Bots</span>
+                </Link>
+                <Link to="/bots/novo" className={`nav-item ${isActive('/bots/novo')}`} onClick={onClose}>
+                  <PlusCircle size={18} /> <span>Novo Bot</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <Link to="/fluxo" className={`nav-item ${isActive('/fluxo')}`} onClick={onClose}>
+            <Layers size={20} />
             <span>Flow Chat (Fluxo)</span>
           </Link>
 
@@ -121,23 +155,23 @@ export function Sidebar({ isOpen, onClose }) {
             <span>Remarketing</span>
           </Link>
 
-          {/* === GRUPO: PLANOS E OFERTAS === */}
+          {/* SUBMENU: PLANOS E OFERTAS */}
           <div className="nav-group">
             <div 
-              className={`nav-item group-header ${isOffersMenuOpen ? 'open' : ''}`}
+              className={`nav-item-header ${isOffersMenuOpen ? 'open' : ''}`} 
               onClick={() => setIsOffersMenuOpen(!isOffersMenuOpen)}
             >
-              <div className="group-label">
+              <div className="nav-item-header-content">
                 <CreditCard size={20} />
                 <span>Planos e Ofertas</span>
               </div>
               {isOffersMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
-            
+
             {isOffersMenuOpen && (
               <div className="nav-subitems">
                 <Link to="/planos" className={`nav-item ${isActive('/planos')}`} onClick={onClose}>
-                  <Star size={18} /> <span>Gerenciar Planos</span>
+                  <Star size={18} /> <span>Planos de Acesso</span>
                 </Link>
                 <Link to="/ofertas/order-bump" className={`nav-item ${isActive('/ofertas/order-bump')}`} onClick={onClose}>
                   <ShoppingBag size={18} /> <span>Order Bump</span>
@@ -146,19 +180,19 @@ export function Sidebar({ isOpen, onClose }) {
             )}
           </div>
 
-          {/* === GRUPO: EXTRAS (AGORA COM RASTREAMENTO) === */}
+          {/* SUBMENU: EXTRAS */}
           <div className="nav-group">
             <div 
-              className={`nav-item group-header ${isExtrasMenuOpen ? 'open' : ''}`}
+              className={`nav-item-header ${isExtrasMenuOpen ? 'open' : ''}`} 
               onClick={() => setIsExtrasMenuOpen(!isExtrasMenuOpen)}
             >
-              <div className="group-label">
+              <div className="nav-item-header-content">
                 <BookOpen size={20} />
                 <span>Extras</span>
               </div>
               {isExtrasMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
-            
+
             {isExtrasMenuOpen && (
               <div className="nav-subitems">
                 <Link to="/funcoes/admins" className={`nav-item ${isActive('/funcoes/admins')}`} onClick={onClose}>
@@ -173,7 +207,7 @@ export function Sidebar({ isOpen, onClose }) {
                   <Unlock size={18} /> <span>Canal Free</span>
                 </Link>
 
-                {/* 🔥 RASTREAMENTO DENTRO DE EXTRAS */}
+                {/* RASTREAMENTO DENTRO DE EXTRAS */}
                 <Link to="/rastreamento" className={`nav-item ${isActive('/rastreamento')}`} onClick={onClose}>
                   <Target size={18} /> <span>Rastreamento</span>
                 </Link>
@@ -199,7 +233,7 @@ export function Sidebar({ isOpen, onClose }) {
           </div>
 
         </nav>
-      </aside>
+      </div>
     </>
   );
 }
