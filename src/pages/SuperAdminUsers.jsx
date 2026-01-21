@@ -25,7 +25,7 @@ export function SuperAdminUsers() {
   const [modalType, setModalType] = useState(null); // 'details', 'delete', 'status', 'promote'
   const [actionLoading, setActionLoading] = useState(false);
 
-  // 🆕 Estado para edição de dados extras (Financeiro)
+  // Estado para edição de dados extras
   const [editData, setEditData] = useState({ taxa_venda: 60, pushin_pay_id: '' });
 
   useEffect(() => {
@@ -70,6 +70,7 @@ export function SuperAdminUsers() {
     setTimeout(() => loadUsers(), 100);
   };
 
+  // Abre modal para ações simples (status, delete, promote)
   const openModal = (type, user) => {
     setSelectedUser(user);
     setModalType(type);
@@ -82,14 +83,15 @@ export function SuperAdminUsers() {
     setModalType(null);
   };
 
-  // 🆕 Carrega detalhes E prepara os dados financeiros para edição
+  // 🔥 CORREÇÃO AQUI: Busca detalhes E preenche os inputs
   const handleViewDetails = async (user) => {
     setActionLoading(true);
     try {
       const details = await superAdminService.getUserDetails(user.id);
       setSelectedUser(details);
       
-      // Preenche o formulário de edição com os dados atuais do banco
+      // 👇 AQUI ESTÁ O PULO DO GATO:
+      // Pegamos o que veio do banco e jogamos no editData para aparecer na caixa
       setEditData({
         taxa_venda: details.user.taxa_venda || 60,
         pushin_pay_id: details.user.pushin_pay_id || ''
@@ -104,8 +106,9 @@ export function SuperAdminUsers() {
     }
   };
 
-  // 🆕 Salvar Taxa e Dados Financeiros
+  // Salvar Taxa e Dados Financeiros
   const handleSaveFinancials = async () => {
+    // Verifica se temos o usuário carregado
     if (!selectedUser || !selectedUser.user) return;
     
     setActionLoading(true);
@@ -115,7 +118,7 @@ export function SuperAdminUsers() {
             pushin_pay_id: editData.pushin_pay_id
         });
         
-        // Atualiza visualmente o objeto selecionado
+        // Atualiza visualmente o objeto selecionado na tela para não precisar recarregar
         setSelectedUser(prev => ({
             ...prev,
             user: {
