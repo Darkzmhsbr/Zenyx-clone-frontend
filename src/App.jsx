@@ -20,6 +20,7 @@ import { AdminManager } from './pages/AdminManager';
 import { OrderBump } from './pages/OrderBump';
 import { Profile } from './pages/Profile';
 import { Tracking } from './pages/Tracking';
+import { AuditLogs } from './pages/AuditLogs'; // 🆕 FASE 3.3
 
 // 🔥 IMPORTANDO A LOJA REAL
 import { MiniAppHome } from './pages/miniapp/MiniAppHome';
@@ -126,6 +127,9 @@ function App() {
               <Route path="/ofertas/order-bump" element={<OrderBump />} />
               <Route path="/rastreamento" element={<Tracking />} />
               <Route path="/perfil" element={<Profile />} />
+              
+              {/* 🆕 FASE 3.3: ROTA DE AUDIT LOGS */}
+              <Route path="/audit-logs" element={<AuditLogs />} />
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
               <Route path="/tutorial" element={<PlaceholderPage title="Tutoriais" />} />

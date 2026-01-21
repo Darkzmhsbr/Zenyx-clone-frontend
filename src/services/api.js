@@ -36,7 +36,7 @@ api.interceptors.response.use(
   (error) => {
     // Se receber 401 (não autorizado)
     if (error.response?.status === 401) {
-      console.warn("❌ Token inválido ou expirado.");
+      console.warn("⚠ Token inválido ou expirado.");
       
       // Limpa dados locais
       localStorage.removeItem('zenyx_token');
@@ -327,6 +327,46 @@ export const authService = {
   getMe: async () => {
     const response = await api.get('/api/auth/me');
     return response.data;
+  }
+};
+
+// ============================================================
+// 📋 SERVIÇO DE AUDIT LOGS (🆕 FASE 3.3)
+// ============================================================
+export const auditService = {
+  /**
+   * Busca logs de auditoria com filtros opcionais
+   * 
+   * @param {Object} filters - Filtros opcionais
+   * @param {number} filters.user_id - ID do usuário
+   * @param {string} filters.action - Tipo de ação (ex: "bot_created")
+   * @param {string} filters.resource_type - Tipo de recurso (ex: "bot", "plano")
+   * @param {boolean} filters.success - true/false
+   * @param {string} filters.start_date - Data inicial (ISO)
+   * @param {string} filters.end_date - Data final (ISO)
+   * @param {number} filters.page - Página (padrão: 1)
+   * @param {number} filters.per_page - Logs por página (padrão: 50)
+   */
+  getLogs: async (filters = {}) => {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.user_id) params.append('user_id', filters.user_id);
+      if (filters.action) params.append('action', filters.action);
+      if (filters.resource_type) params.append('resource_type', filters.resource_type);
+      if (filters.success !== undefined) params.append('success', filters.success);
+      if (filters.start_date) params.append('start_date', filters.start_date);
+      if (filters.end_date) params.append('end_date', filters.end_date);
+      
+      params.append('page', filters.page || 1);
+      params.append('per_page', filters.per_page || 50);
+      
+      const response = await api.get(`/api/admin/audit-logs?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar logs de auditoria:", error);
+      return { data: [], total: 0, page: 1, per_page: 50, total_pages: 0 };
+    }
   }
 };
 
