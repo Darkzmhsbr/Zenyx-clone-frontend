@@ -221,6 +221,7 @@ export const dashboardService = {
   }
 };
 
+// Serviço de Perfil ADMIN (Sistema)
 export const profileService = {
   get: async () => (await api.get('/api/admin/profile')).data,
   update: async (data) => (await api.post('/api/admin/profile', data)).data
@@ -327,6 +328,12 @@ export const authService = {
   getMe: async () => {
     const response = await api.get('/api/auth/me');
     return response.data;
+  },
+
+  // 🆕 ADICIONADO PARA SUPORTE AO SPLIT/PUSHIN PAY (MEMBRO)
+  updateProfile: async (data) => {
+    const response = await api.put('/api/auth/profile', data);
+    return response.data;
   }
 };
 
@@ -379,12 +386,6 @@ export const superAdminService = {
 
   /**
    * Lista todos os usuários do sistema (apenas super-admin)
-   * 
-   * @param {Object} filters - Filtros opcionais
-   * @param {number} filters.page - Página (padrão: 1)
-   * @param {number} filters.per_page - Usuários por página (padrão: 50)
-   * @param {string} filters.search - Busca por username, email ou nome
-   * @param {string} filters.status - "active" ou "inactive"
    */
   listUsers: async (filters = {}) => {
     try {
@@ -458,6 +459,17 @@ export const superAdminService = {
     } catch (error) {
       console.error("Erro ao promover/rebaixar usuário:", error);
       throw error;
+    }
+  },
+  
+  // 🆕 ADICIONADO PARA ATUALIZAR DADOS FINANCEIROS (TAXA/PUSHIN ID)
+  updateUser: async (userId, userData) => {
+    try {
+        const response = await api.put(`/api/superadmin/users/${userId}`, userData);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao atualizar usuário:", error);
+        throw error;
     }
   }
 };

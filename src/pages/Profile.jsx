@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { profileService } from '../services/api';
+// 👇 Alterado para authService (pois é lá que adicionamos o updateProfile do membro)
+import { authService, profileService } from '../services/api';
 // 👇 Importante: Pegar o usuário logado para saber quem é
 import { useAuth } from '../context/AuthContext';
-import { User, Award, Lock, Shield, Briefcase, Star } from 'lucide-react';
+import { User, Award, Lock, Shield, Briefcase, Star, CreditCard, Save } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Profile.css';
@@ -11,10 +12,11 @@ export function Profile() {
   const { user, logout } = useAuth(); // Pegando dados da sessão
   const [loading, setLoading] = useState(true);
   
-  // Dados do Perfil (vindos da API de perfil)
+  // Dados do Perfil
   const [profile, setProfile] = useState({
     name: '',
-    avatar_url: ''
+    email: '',
+    pushin_pay_id: '' // 🆕 Campo novo
   });
 
   // Dados Estatísticos (Império)
@@ -37,48 +39,69 @@ export function Profile() {
     { name: 'Iniciante', target: 100, color: '#10b981' },
     { name: 'Empreendedor', target: 1000, color: '#3b82f6' },
     { name: 'Barão', target: 5000, color: '#8b5cf6' },
-    { name: 'Magnata', target: 10000, color: '#c333ff' },
-    { name: 'Imperador', target: 50000, color: '#f59e0b' }
+    { name: 'Magnata', target: 10000, color: '#f59e0b' },
+    { name: 'Imperador', target: 50000, color: '#ef4444' },
+    { name: 'Lenda', target: 100000, color: '#c333ff' }
   ];
 
+  // Formatar Moeda
+  const formatMoney = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value / 100); // Assume valor em centavos
+  };
+
   useEffect(() => {
-    carregarDados();
+    loadData();
   }, []);
 
-  const carregarDados = async () => {
+  const loadData = async () => {
     try {
-      // Tenta buscar dados do backend
-      const data = await profileService.get();
-      if (data) {
-        setProfile({
-            name: data.name || user?.username, // Fallback para o user da sessão
-            avatar_url: data.avatar_url
-        });
-        // Se a API retornar stats e gamification, preenche aqui
-        if (data.stats) setStats(data.stats);
-        if (data.gamification) setGamification(data.gamification);
+      // Carrega dados de stats do profileService e dados do usuário do authService
+      const [userData, statsData] = await Promise.all([
+        authService.getMe(),
+        profileService.getStats()
+      ]);
+      
+      setProfile({
+        name: userData.full_name || '',
+        email: userData.email || '',
+        pushin_pay_id: userData.pushin_pay_id || '' // 🆕 Carrega ID
+      });
+      
+      setStats(statsData);
+
+      // Calcular Nível
+      const revenue = statsData.total_revenue || 0;
+      let current = badges[0];
+      let next = badges[1];
+      
+      for (let i = 0; i < badges.length; i++) {
+        if (revenue >= badges[i].target) {
+          current = badges[i];
+          next = badges[i + 1] || null;
+        }
       }
+
+      let progress = 100;
+      if (next) {
+        const range = next.target - current.target;
+        const value = revenue - current.target;
+        progress = Math.min(100, Math.max(0, (value / range) * 100));
+      }
+
+      setGamification({
+        current_level: current,
+        next_level: next,
+        progress_percentage: progress
+      });
+
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    Swal.fire({
-      title: 'Sair do Sistema?',
-      text: "Você precisará logar novamente.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#c333ff',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sim, sair',
-      background: '#1b1730',
-      color: '#fff'
-    }).then((result) => {
-      if (result.isConfirmed) logout();
-    });
   };
 
   // =========================================================
@@ -125,81 +148,131 @@ export function Profile() {
     };
   };
 
-  const roleInfo = getUserRole();
-  const currentLevelName = gamification.current_level?.name || "Iniciante";
+  const role = getUserRole();
 
-  // Formata moeda
-  const formatMoney = (val) => Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  // 🆕 FUNÇÃO SALVAR DADOS
+  const handleSaveProfile = async () => {
+    try {
+        await authService.updateProfile({
+            full_name: profile.name,
+            pushin_pay_id: profile.pushin_pay_id
+        });
+        Swal.fire('Sucesso', 'Perfil atualizado com sucesso!', 'success');
+    } catch (error) {
+        Swal.fire('Erro', 'Não foi possível salvar os dados.', 'error');
+    }
+  };
+
+  if (loading) return <div className="loading">Carregando perfil...</div>;
 
   return (
     <div className="profile-container">
       
-      {/* 1. HEADER DO PERFIL */}
+      {/* HEADER DO PERFIL */}
       <div className="profile-header-section">
         <div className="profile-identity">
-          <div className="avatar-wrapper">
-             {/* Se não tiver avatar, mostra ícone */}
-             {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="Avatar" className="avatar-img" />
-             ) : (
-                <User size={40} color="#c333ff" />
-             )}
-          </div>
-          <div>
-            <h1 className="profile-name">{user?.full_name || user?.username}</h1>
-            
-            {/* Exibe o Cargo Dinâmico */}
-            <div className={roleInfo.className}>
-                {roleInfo.icon}
-                <span>{roleInfo.label}</span>
+            <div className="avatar-wrapper">
+                <div className="avatar-placeholder">{profile.name.charAt(0)}</div>
             </div>
-
-            <p className="profile-email">{user?.email}</p>
-          </div>
-        </div>
-
-        <div className="profile-actions">
-           <Button onClick={handleLogout} variant="danger" style={{background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)'}}>
-             Sair da Conta
-           </Button>
+            <div>
+                <h1 className="profile-name">{profile.name || user.username}</h1>
+                <div className="profile-email">{profile.email}</div>
+                <div className={role.className}>
+                    {role.icon}
+                    <span>{role.label}</span>
+                </div>
+            </div>
         </div>
       </div>
 
-      {/* 2. ESTATÍSTICAS DO IMPÉRIO (Só mostra se for Admin/Sócio ou se o user tiver bots) */}
+      {/* 🆕 CONFIGURAÇÃO FINANCEIRA (NOVO) */}
+      <div className="finance-section" style={{ background: '#111', padding: '20px', borderRadius: '12px', border: '1px solid #333', marginBottom: '30px' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fff', marginBottom: '15px' }}>
+            <CreditCard size={20} color="#10b981" />
+            Configuração de Recebimento
+        </h3>
+        <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '15px' }}>
+            Para receber suas comissões de vendas, informe o ID da sua conta Pushin Pay. 
+            Você receberá o valor das vendas descontando a taxa da plataforma.
+        </p>
+        
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'end' }}>
+            <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', color: '#ccc', fontSize: '12px', marginBottom: '5px' }}>ID da Conta Pushin Pay</label>
+                <input 
+                    type="text" 
+                    value={profile.pushin_pay_id}
+                    onChange={(e) => setProfile({...profile, pushin_pay_id: e.target.value})}
+                    placeholder="Ex: 9D4FA0F6-..."
+                    style={{ 
+                        width: '100%', 
+                        padding: '10px', 
+                        background: '#222', 
+                        border: '1px solid #444', 
+                        color: '#fff', 
+                        borderRadius: '6px' 
+                    }}
+                />
+            </div>
+            <button 
+                onClick={handleSaveProfile}
+                style={{ 
+                    padding: '10px 20px', 
+                    background: '#c333ff', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontWeight: 'bold'
+                }}
+            >
+                <Save size={18} /> Salvar
+            </button>
+        </div>
+      </div>
+
+      {/* ESTATÍSTICAS */}
       <div className="empire-stats-section">
-         <h3 className="section-title">Estatísticas do Império</h3>
-         <div className="stats-grid">
-            <div className="stat-card">
-               <span className="stat-label">Bots Ativos</span>
-               <strong className="stat-value">{stats.total_bots}</strong>
-            </div>
-            <div className="stat-card">
-               <span className="stat-label">Membros Totais</span>
-               <strong className="stat-value">{stats.total_members}</strong>
-            </div>
-            <div className="stat-card highlight">
-               <span className="stat-label">Faturamento Total</span>
-               <strong className="stat-value">{formatMoney(stats.total_revenue)}</strong>
-            </div>
-         </div>
+        <h3 className="section-title">Estatísticas do Império</h3>
+        <div className="stats-grid">
+          <div className="stat-card highlight">
+            <span className="stat-label">Faturamento Total</span>
+            <span className="stat-value">{formatMoney(stats.total_revenue)}</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Vendas Realizadas</span>
+            <span className="stat-value">{stats.total_sales}</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Bots Ativos</span>
+            <span className="stat-value">{stats.total_bots}</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Membros Totais</span>
+            <span className="stat-value">{stats.total_members}</span>
+          </div>
+        </div>
       </div>
 
-      {/* 3. GAMIFICAÇÃO & NÍVEL */}
+      {/* GAMIFICAÇÃO */}
       <div className="gamification-section">
         <div className="level-header">
-           <div>
-             <span className="current-level-label">Nível Atual</span>
-             <h2 className="current-level-title">{currentLevelName}</h2>
-           </div>
-           <div className="xp-badge">
-             {stats.total_sales} Vendas
-           </div>
+          <div>
+            <span className="current-level-label">Nível Atual</span>
+            <h2 className="current-level-title">{gamification.current_level?.name || 'Iniciante'}</h2>
+          </div>
+          <div className="xp-badge">
+            {gamification.next_level ? `Próximo: ${gamification.next_level.name}` : 'Nível Máximo'}
+          </div>
         </div>
 
         <div className="progress-container">
           <div className="progress-labels">
-             <span>Progresso para {gamification.next_level?.name || "Próximo Nível"}</span>
-             <span>{Math.round(gamification.progress_percentage)}%</span>
+            <span>Progresso</span>
+            <span>{gamification.progress_percentage.toFixed(1)}%</span>
           </div>
           <div className="progress-track">
             <div 
@@ -233,7 +306,6 @@ export function Profile() {
           })}
         </div>
       </div>
-
     </div>
   );
 }

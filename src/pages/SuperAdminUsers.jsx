@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { superAdminService } from '../services/api';
 import './SuperAdmin.css';
+import Swal from 'sweetalert2';
 
 export function SuperAdminUsers() {
   const navigate = useNavigate();
@@ -23,6 +24,9 @@ export function SuperAdminUsers() {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null); // 'details', 'delete', 'status', 'promote'
   const [actionLoading, setActionLoading] = useState(false);
+
+  // 🆕 Estado para edição de dados extras (Financeiro)
+  const [editData, setEditData] = useState({ taxa_venda: 60, pushin_pay_id: '' });
 
   useEffect(() => {
     loadUsers();
@@ -78,17 +82,54 @@ export function SuperAdminUsers() {
     setModalType(null);
   };
 
+  // 🆕 Carrega detalhes E prepara os dados financeiros para edição
   const handleViewDetails = async (user) => {
     setActionLoading(true);
     try {
       const details = await superAdminService.getUserDetails(user.id);
       setSelectedUser(details);
+      
+      // Preenche o formulário de edição com os dados atuais do banco
+      setEditData({
+        taxa_venda: details.user.taxa_venda || 60,
+        pushin_pay_id: details.user.pushin_pay_id || ''
+      });
+
       setModalType('details');
       setShowModal(true);
     } catch (error) {
       alert("Erro ao carregar detalhes do usuário");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // 🆕 Salvar Taxa e Dados Financeiros
+  const handleSaveFinancials = async () => {
+    if (!selectedUser || !selectedUser.user) return;
+    
+    setActionLoading(true);
+    try {
+        await superAdminService.updateUser(selectedUser.user.id, {
+            taxa_venda: parseInt(editData.taxa_venda),
+            pushin_pay_id: editData.pushin_pay_id
+        });
+        
+        // Atualiza visualmente o objeto selecionado
+        setSelectedUser(prev => ({
+            ...prev,
+            user: {
+                ...prev.user,
+                taxa_venda: editData.taxa_venda,
+                pushin_pay_id: editData.pushin_pay_id
+            }
+        }));
+        
+        Swal.fire('Salvo', 'Dados financeiros atualizados com sucesso!', 'success');
+    } catch (error) {
+        Swal.fire('Erro', 'Falha ao salvar dados financeiros.', 'error');
+    } finally {
+        setActionLoading(false);
     }
   };
 
@@ -351,6 +392,68 @@ export function SuperAdminUsers() {
                       <p><strong>Status:</strong> {selectedUser.user.is_active ? '✅ Ativo' : '❌ Inativo'}</p>
                       <p><strong>Super Admin:</strong> {selectedUser.user.is_superuser ? '👑 Sim' : '❌ Não'}</p>
                       <p><strong>Cadastro:</strong> {formatDate(selectedUser.user.created_at)}</p>
+                    </div>
+
+                    {/* 🆕 ÁREA FINANCEIRA NO MODAL */}
+                    <div className="detail-section" style={{ border: '1px solid #c333ff', background: 'rgba(195, 51, 255, 0.03)' }}>
+                        <h3 style={{ color: '#c333ff', borderBottomColor: '#c333ff' }}>💰 Financeiro & Split</h3>
+                        <div style={{ display: 'grid', gap: '15px', marginTop: '10px' }}>
+                            <div>
+                                <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px', color: '#ccc' }}>
+                                    Taxa por Venda (em centavos)
+                                </label>
+                                <input 
+                                    type="number" 
+                                    value={editData.taxa_venda}
+                                    onChange={(e) => setEditData({...editData, taxa_venda: e.target.value})}
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '10px', 
+                                        background: '#1a1a1a',
+                                        border: '1px solid #444', 
+                                        color: '#fff',
+                                        borderRadius: '4px' 
+                                    }}
+                                />
+                                <span style={{fontSize: '11px', color: '#888'}}>Ex: 60 = R$ 0,60</span>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px', color: '#ccc' }}>
+                                    Pushin Pay ID (Destino do Lucro)
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value={editData.pushin_pay_id}
+                                    onChange={(e) => setEditData({...editData, pushin_pay_id: e.target.value})}
+                                    placeholder="Ex: 9D4FA0F6-..."
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '10px', 
+                                        background: '#1a1a1a',
+                                        border: '1px solid #444', 
+                                        color: '#fff',
+                                        borderRadius: '4px' 
+                                    }}
+                                />
+                            </div>
+                            <button 
+                                onClick={handleSaveFinancials}
+                                disabled={actionLoading}
+                                style={{ 
+                                    marginTop: '5px', 
+                                    padding: '10px', 
+                                    background: '#c333ff', 
+                                    color: '#fff', 
+                                    border: 'none', 
+                                    borderRadius: '4px', 
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    transition: '0.2s'
+                                }}
+                            >
+                                {actionLoading ? 'Salvando...' : '💾 Salvar Alterações Financeiras'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="detail-section">
