@@ -226,6 +226,53 @@ export const dashboardService = {
 };
 
 // ============================================================
+// 🔗 SERVIÇO DE INTEGRAÇÕES
+// ============================================================
+export const integrationService = { 
+  getConfig: async () => {
+    try {
+      const response = await api.get('/api/admin/config');
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar configurações:", error);
+      return {};
+    }
+  },
+  
+  saveConfig: async (data) => {
+    try {
+      const response = await api.post('/api/admin/config', data);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao salvar configurações:", error);
+      throw error;
+    }
+  },
+  
+  getPushinStatus: async (botId) => {
+    if (!botId) return { status: 'desconectado' };
+    
+    try {
+      const response = await api.get(`/api/admin/integrations/pushinpay/${botId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar status Pushin Pay:", error);
+      return { status: 'desconectado' };
+    }
+  },
+  
+  savePushinToken: async (botId, token) => {
+    try {
+      const response = await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token });
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao salvar token Pushin Pay:", error);
+      throw error;
+    }
+  }
+};
+
+// ============================================================
 // 👤 SERVIÇO DE PERFIL (✅ CORRIGIDO - ADICIONADO getStats)
 // ============================================================
 export const profileService = {
