@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { profileService } from '../services/api';
-import { User, DollarSign, ShoppingBag, Users, Bot, Award, Save, Lock, Unlock } from 'lucide-react';
+// 👇 Importante: Pegar o usuário logado para saber quem é
+import { useAuth } from '../context/AuthContext';
+import { User, Award, Lock, Shield, Briefcase, Star } from 'lucide-react';
 import { Button } from '../components/Button';
-import { Card, CardContent } from '../components/Card';
-import { Input } from '../components/Input';
 import Swal from 'sweetalert2';
 import './Profile.css';
 
 export function Profile() {
+  const { user, logout } = useAuth(); // Pegando dados da sessão
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   
-  // Dados do Perfil
+  // Dados do Perfil (vindos da API de perfil)
   const [profile, setProfile] = useState({
     name: '',
     avatar_url: ''
@@ -32,17 +32,31 @@ export function Profile() {
     progress_percentage: 0
   });
 
+  // Lista de Badges (Mantida original)
+  const badges = [
+    { name: 'Iniciante', target: 100, color: '#10b981' },
+    { name: 'Empreendedor', target: 1000, color: '#3b82f6' },
+    { name: 'Barão', target: 5000, color: '#8b5cf6' },
+    { name: 'Magnata', target: 10000, color: '#c333ff' },
+    { name: 'Imperador', target: 50000, color: '#f59e0b' }
+  ];
+
   useEffect(() => {
     carregarDados();
   }, []);
 
   const carregarDados = async () => {
     try {
+      // Tenta buscar dados do backend
       const data = await profileService.get();
       if (data) {
-        setProfile(data.profile);
-        setStats(data.stats);
-        setGamification(data.gamification);
+        setProfile({
+            name: data.name || user?.username, // Fallback para o user da sessão
+            avatar_url: data.avatar_url
+        });
+        // Se a API retornar stats e gamification, preenche aqui
+        if (data.stats) setStats(data.stats);
+        if (data.gamification) setGamification(data.gamification);
       }
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
@@ -51,117 +65,140 @@ export function Profile() {
     }
   };
 
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await profileService.update(profile);
-      Swal.fire({
-        icon: 'success',
-        title: 'Perfil Salvo!',
-        toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
-        background: '#151515', color: '#fff'
-      });
-    } catch (error) {
-      Swal.fire('Erro', 'Falha ao salvar perfil.', 'error');
-    } finally {
-      setSaving(false);
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Sair do Sistema?',
+      text: "Você precisará logar novamente.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#c333ff',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sim, sair',
+      background: '#1b1730',
+      color: '#fff'
+    }).then((result) => {
+      if (result.isConfirmed) logout();
+    });
+  };
+
+  // =========================================================
+  // 👑 LÓGICA DE CARGOS E HIERARQUIA
+  // =========================================================
+  const getUserRole = () => {
+    const username = user?.username?.toLowerCase() || '';
+    
+    // 1. DONO / MASTER (Você)
+    if (username === 'zekai' || username === 'admin' || username === 'master') {
+        return {
+            label: 'Administrador - Dono do Império Zenyx',
+            icon: <Shield size={16} />,
+            className: 'role-badge role-master'
+        };
     }
+
+    // 2. SÓCIOS (Adicione os usernames aqui no futuro)
+    const socios = ['socio1', 'fulano_socio']; 
+    if (socios.includes(username)) {
+        return {
+            label: 'Sócio do Império Zenyx',
+            icon: <Star size={16} />,
+            className: 'role-badge role-partner'
+        };
+    }
+
+    // 3. COLABORADORES (Adicione os usernames aqui no futuro)
+    const colaboradores = ['suporte', 'dev_team', 'atendente'];
+    if (colaboradores.includes(username)) {
+        return {
+            label: 'Colaborador do Império Zenyx',
+            icon: <Briefcase size={16} />,
+            className: 'role-badge role-collab'
+        };
+    }
+
+    // 4. PADRÃO (CLIENTES)
+    return {
+        label: 'Usuário',
+        icon: <User size={16} />,
+        className: 'role-badge role-user'
+    };
   };
 
-  const formatMoney = (val) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-  };
+  const roleInfo = getUserRole();
+  const currentLevelName = gamification.current_level?.name || "Iniciante";
 
-  // Lista de Placas (Visual)
-  const badges = [
-    { name: "Prodígio", target: 100000, slug: "prodigio", color: "#a855f7" },
-    { name: "Empreendedor", target: 500000, slug: "empreendedor", color: "#3b82f6" },
-    { name: "Milionário", target: 1000000, slug: "milionario", color: "#ef4444" },
-    { name: "Magnata", target: 10000000, slug: "magnata", color: "#eab308" }
-  ];
+  // Formata moeda
+  const formatMoney = (val) => Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="profile-container">
       
-      {/* 1. CABEÇALHO E IDENTIDADE */}
+      {/* 1. HEADER DO PERFIL */}
       <div className="profile-header-section">
         <div className="profile-identity">
           <div className="avatar-wrapper">
-            {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="avatar-img" />
-            ) : (
-              <div className="avatar-placeholder">
-                <User size={40} />
-              </div>
-            )}
+             {/* Se não tiver avatar, mostra ícone */}
+             {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="avatar-img" />
+             ) : (
+                <User size={40} color="#c333ff" />
+             )}
           </div>
-          <div className="identity-info">
-            <h1>{profile.name || "Administrador"}</h1>
-            <p>Dono do Império Zenyx</p>
+          <div>
+            <h1 className="profile-name">{user?.full_name || user?.username}</h1>
+            
+            {/* Exibe o Cargo Dinâmico */}
+            <div className={roleInfo.className}>
+                {roleInfo.icon}
+                <span>{roleInfo.label}</span>
+            </div>
+
+            <p className="profile-email">{user?.email}</p>
           </div>
         </div>
 
-        <form className="profile-edit-form" onSubmit={handleSaveProfile}>
-          <div className="inputs-row">
-            <Input 
-              placeholder="Seu Nome" 
-              value={profile.name} 
-              onChange={e => setProfile({...profile, name: e.target.value})}
-            />
-            <Input 
-              placeholder="URL da Foto (Avatar)" 
-              value={profile.avatar_url} 
-              onChange={e => setProfile({...profile, avatar_url: e.target.value})}
-            />
-            <Button type="submit" disabled={saving}>
-              <Save size={18} /> {saving ? "Salvando..." : "Salvar"}
-            </Button>
-          </div>
-        </form>
+        <div className="profile-actions">
+           <Button onClick={handleLogout} variant="danger" style={{background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)'}}>
+             Sair da Conta
+           </Button>
+        </div>
       </div>
 
-      {/* 2. DASHBOARD GLOBAL (O IMPÉRIO) */}
-      <div className="empire-stats-grid">
-        <Card className="stat-card-global">
-          <CardContent>
-            <div className="stat-icon-wrapper bots"><Bot size={24}/></div>
-            <h3>{loading ? "..." : stats.total_bots}</h3>
-            <p>Bots Ativos</p>
-          </CardContent>
-        </Card>
-
-        <Card className="stat-card-global">
-          <CardContent>
-            <div className="stat-icon-wrapper members"><Users size={24}/></div>
-            <h3>{loading ? "..." : stats.total_members}</h3>
-            <p>Membros Totais</p>
-          </CardContent>
-        </Card>
-
-        <Card className="stat-card-global">
-          <CardContent>
-            <div className="stat-icon-wrapper revenue"><DollarSign size={24}/></div>
-            <h3>{loading ? "..." : formatMoney(stats.total_revenue)}</h3>
-            <p>Faturamento Global</p>
-          </CardContent>
-        </Card>
-
-        <Card className="stat-card-global">
-          <CardContent>
-            <div className="stat-icon-wrapper sales"><ShoppingBag size={24}/></div>
-            <h3>{loading ? "..." : stats.total_sales}</h3>
-            <p>Vendas Totais</p>
-          </CardContent>
-        </Card>
+      {/* 2. ESTATÍSTICAS DO IMPÉRIO (Só mostra se for Admin/Sócio ou se o user tiver bots) */}
+      <div className="empire-stats-section">
+         <h3 className="section-title">Estatísticas do Império</h3>
+         <div className="stats-grid">
+            <div className="stat-card">
+               <span className="stat-label">Bots Ativos</span>
+               <strong className="stat-value">{stats.total_bots}</strong>
+            </div>
+            <div className="stat-card">
+               <span className="stat-label">Membros Totais</span>
+               <strong className="stat-value">{stats.total_members}</strong>
+            </div>
+            <div className="stat-card highlight">
+               <span className="stat-label">Faturamento Total</span>
+               <strong className="stat-value">{formatMoney(stats.total_revenue)}</strong>
+            </div>
+         </div>
       </div>
 
-      {/* 3. GAMIFICAÇÃO E PLACAS */}
+      {/* 3. GAMIFICAÇÃO & NÍVEL */}
       <div className="gamification-section">
-        <div className="progress-area">
-          <div className="progress-header">
-            <h2>Próxima Conquista: <span style={{color: '#c333ff'}}>{gamification.next_level ? gamification.next_level.name : "Mestre Supremo"}</span></h2>
-            <span>{gamification.progress_percentage}% Concluído</span>
+        <div className="level-header">
+           <div>
+             <span className="current-level-label">Nível Atual</span>
+             <h2 className="current-level-title">{currentLevelName}</h2>
+           </div>
+           <div className="xp-badge">
+             {stats.total_sales} Vendas
+           </div>
+        </div>
+
+        <div className="progress-container">
+          <div className="progress-labels">
+             <span>Progresso para {gamification.next_level?.name || "Próximo Nível"}</span>
+             <span>{Math.round(gamification.progress_percentage)}%</span>
           </div>
           <div className="progress-track">
             <div 
@@ -175,14 +212,15 @@ export function Profile() {
           </p>
         </div>
 
-        <h3 className="badges-title">Galeria de Troféus</h3>
+        {/* GALERIA DE TROFÉUS */}
+        <h3 className="badges-title" style={{marginTop: '40px'}}>Galeria de Troféus</h3>
         <div className="badges-grid">
           {badges.map((badge, index) => {
             const isUnlocked = stats.total_revenue >= badge.target;
             return (
               <div key={index} className={`badge-card ${isUnlocked ? 'unlocked' : 'locked'}`}>
                 <div className="badge-icon" style={{ borderColor: isUnlocked ? badge.color : '#333', color: isUnlocked ? badge.color : '#555' }}>
-                  {isUnlocked ? <Award size={40} /> : <Lock size={40} />}
+                  {isUnlocked ? <Award size={32} /> : <Lock size={32} />}
                 </div>
                 <h4>{badge.name}</h4>
                 <p className="badge-target">{formatMoney(badge.target)}</p>
@@ -190,7 +228,7 @@ export function Profile() {
                   {isUnlocked ? <span className="status-unlocked">CONQUISTADO</span> : <span className="status-locked">BLOQUEADO</span>}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
