@@ -224,9 +224,9 @@ export const dashboardService = {
 // Serviço de Perfil ADMIN (Sistema)
 export const profileService = {
   get: async () => (await api.get('/api/admin/profile')).data,
-  update: async (data) => (await api.post('/api/admin/profile', data)).data
+  update: async (data) => (await api.post('/api/admin/profile', data)).data,
+  getStats: async () => (await api.get('/api/profile/stats')).data  // 🆕 ADICIONAR ESTA LINHA
 };
-
 // ============================================================
 // 🔗 SERVIÇO DE INTEGRAÇÕES E TRACKING
 // ============================================================
