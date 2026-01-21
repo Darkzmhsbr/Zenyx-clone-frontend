@@ -191,15 +191,19 @@ export function ChatFlow() {
   return (
     <div className="chatflow-container">
       
-      {/* HEADER CORRIGIDO: Botão Salvar visível */}
-      <div className="page-header">
+      {/* 🔥 CORREÇÃO CRÍTICA:
+          Usando 'chatflow-header' para isolar este componente do CSS global 
+          que estava quebrando o layout no Desktop.
+      */}
+      <div className="chatflow-header">
         <div className="header-titles">
           <h1>Editor de Fluxo</h1>
           <p>Configure a sequência de mensagens do seu bot.</p>
         </div>
         <div className="header-actions">
           <Button onClick={handleSaveFixed} disabled={loading} className="btn-save-main">
-            <Save size={20} /> <span className="btn-text">Salvar Alterações</span>
+            <Save size={20} style={{marginRight: '8px'}} /> 
+            SALVAR ALTERAÇÕES
           </Button>
         </div>
       </div>
