@@ -29,20 +29,28 @@ api.interceptors.request.use(
 );
 
 // ============================================================
-// 🔐 INTERCEPTOR: DETECTA TOKEN EXPIRADO E REDIRECIONA
+// 🔐 INTERCEPTOR: DETECTA TOKEN EXPIRADO E PREVINE LOOP
 // ============================================================
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Se receber 401 (não autorizado), faz logout automático
+    // Se receber 401 (não autorizado)
     if (error.response?.status === 401) {
-      console.log("❌ Token inválido ou expirado. Redirecionando para login...");
+      console.warn("❌ Token inválido ou expirado.");
       
+      // Limpa dados locais
       localStorage.removeItem('zenyx_token');
       localStorage.removeItem('zenyx_admin_user');
       
-      // Redireciona para login
-      window.location.href = '/login';
+      // 🔥 CORREÇÃO DO LOOP INFINITO:
+      // Só redireciona se NÃO estivermos já na tela de login ou registro
+      const path = window.location.pathname;
+      if (!path.includes('/login') && !path.includes('/register')) {
+         console.log("🔄 Redirecionando para login...");
+         window.location.href = '/login';
+      } else {
+         console.log("⚠️ Já estamos no login, ignorando redirect.");
+      }
     }
     
     return Promise.reject(error);
@@ -75,18 +83,17 @@ export const flowService = {
 };
 
 // ============================================================
-// 💲 SERVIÇO DE PLANOS (CORRIGIDO PARA EVITAR [object Object])
+// 💲 SERVIÇO DE PLANOS
 // ============================================================
 export const planService = {
   listPlans: async (botId) => (await api.get(`/api/admin/bots/${botId}/plans`)).data,
   
   createPlan: async (botId, planData) => {
-    // Garante que botId seja string/numero simples
     return (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data;
   },
   
   updatePlan: async (botId, planId, planData) => {
-    const pid = String(planId); // Força conversão para evitar erro de objeto
+    const pid = String(planId); 
     return (await api.put(`/api/admin/bots/${botId}/plans/${pid}`, planData)).data;
   },
   
@@ -192,7 +199,6 @@ export const crmService = {
   resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
 };
 
-// Alias para compatibilidade
 export const admin = crmService;
 export const leadService = crmService;
 
