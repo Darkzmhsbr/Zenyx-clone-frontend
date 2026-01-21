@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 import React from 'react';
+import React from 'react';
 
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
@@ -121,19 +122,19 @@ export function Sidebar({ isOpen, onClose }) {
             <span>Contatos (Leads)</span>
           </Link>
 
-          {/* SUBMENU: MEUS BOTS */}
+         {/* === GRUPO: MEUS BOTS === */}
           <div className="nav-group">
             <div 
-              className={`nav-item-header ${isBotMenuOpen ? 'open' : ''}`} 
+              className={`nav-item group-header ${isBotMenuOpen ? 'open' : ''}`}
               onClick={() => setIsBotMenuOpen(!isBotMenuOpen)}
             >
-              <div className="nav-item-header-content">
-                <Zap size={20} />
+              <div className="group-label">
+                <MessageSquare size={20} />
                 <span>Meus Bots</span>
               </div>
               {isBotMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
-
+            
             {isBotMenuOpen && (
               <div className="nav-subitems">
                 <Link to="/bots" className={`nav-item ${isActive('/bots')}`} onClick={onClose}>
