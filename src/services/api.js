@@ -10,9 +10,43 @@ const api = axios.create({
   },
 });
 
+// ============================================================
+// 🔐 INTERCEPTOR: ADICIONA TOKEN JWT EM TODAS AS REQUISIÇÕES
+// ============================================================
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('zenyx_token');
+    
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// ============================================================
+// 🔐 INTERCEPTOR: DETECTA TOKEN EXPIRADO E REDIRECIONA
+// ============================================================
 api.interceptors.response.use(
-  r => r,
-  e => Promise.reject(e)
+  (response) => response,
+  (error) => {
+    // Se receber 401 (não autorizado), faz logout automático
+    if (error.response?.status === 401) {
+      console.log("❌ Token inválido ou expirado. Redirecionando para login...");
+      
+      localStorage.removeItem('zenyx_token');
+      localStorage.removeItem('zenyx_admin_user');
+      
+      // Redireciona para login
+      window.location.href = '/login';
+    }
+    
+    return Promise.reject(error);
+  }
 );
 
 // ============================================================
@@ -260,6 +294,34 @@ export const miniappService = {
   switchMode: async (botId, mode) => (await api.post(`/api/admin/bots/${botId}/mode`, { modo: mode })).data,
   
   getPublicData: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data
+};
+
+// ============================================================
+// 🔐 SERVIÇO DE AUTENTICAÇÃO (NOVO)
+// ============================================================
+export const authService = {
+  register: async (username, email, password, fullName) => {
+    const response = await api.post('/api/auth/register', {
+      username,
+      email,
+      password,
+      full_name: fullName
+    });
+    return response.data;
+  },
+  
+  login: async (username, password) => {
+    const response = await api.post('/api/auth/login', {
+      username,
+      password
+    });
+    return response.data;
+  },
+  
+  getMe: async () => {
+    const response = await api.get('/api/auth/me');
+    return response.data;
+  }
 };
 
 export default api;
