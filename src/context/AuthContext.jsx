@@ -30,14 +30,16 @@ export function AuthProvider({ children }) {
 
   // ============================================================
   // 🔐 LOGIN COM API REAL (SUBSTITUI O HARDCODED)
+  // ✅ ATUALIZADO: Agora aceita rememberMe como 3º parâmetro
   // ============================================================
-  const login = async (username, password) => {
+  const login = async (username, password, rememberMe = false) => {
     try {
       const API_URL = 'https://zenyx-gbs-testesv1-production.up.railway.app';
       
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         username: username,
-        password: password
+        password: password,
+        remember_me: rememberMe  // ✅ NOVO: Envia para o backend
       });
 
       const { access_token, user_id, username: userName } = response.data;
