@@ -6,7 +6,7 @@ import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Login.css';
 
-const TURNSTILE_SITE_KEY = '0x4AAAAAACOUmpPNTu0O44Tfoa_r8qOZzJs';
+const TURNSTILE_SITE_KEY = '0x4AAAAAACOUmnaXqL0WiPSe';
 
 export function Login() {
   const [username, setUsername] = useState('');
