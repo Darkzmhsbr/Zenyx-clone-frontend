@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBot } from '../context/BotContext';
 import { notificationService } from '../services/api';
-import { Bot, ChevronDown, Check, Bell, Moon, Sun, Menu, User, Settings, LogOut, X } from 'lucide-react'; 
+import { 
+  Bot, ChevronDown, Check, Bell, Moon, Sun, Menu, User, Settings, LogOut, 
+  Info, AlertTriangle, XCircle, CheckCircle 
+} from 'lucide-react'; 
 import './Header.css'; 
 
 export function Header({ onToggleMenu }) {
@@ -20,7 +23,9 @@ export function Header({ onToggleMenu }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Inicializa tema
+  // Refs para fechar ao clicar fora (opcional, mas bom ter)
+  const notifRef = useRef(null);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem('zenyx_theme') || 'dark';
     const isDark = savedTheme === 'dark';
@@ -28,7 +33,7 @@ export function Header({ onToggleMenu }) {
     applyTheme(isDark);
   }, []);
 
-  // Busca notificações
+  // Busca notificações reais
   const fetchNotifications = async () => {
     if (!user) return;
     try {
@@ -68,16 +73,18 @@ export function Header({ onToggleMenu }) {
     const root = document.documentElement;
     if (isDark) {
       root.style.setProperty('--background', '#0f0c29');
-      root.style.setProperty('--card-bg', '#1b1730');
-      root.style.setProperty('--text-primary', '#ffffff');
-      root.style.setProperty('--text-secondary', '#a0a0b0');
-      root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
+      root.style.setProperty('--card', '#1b1730');
+      root.style.setProperty('--card-border', '#302b63');
+      root.style.setProperty('--foreground', '#ffffff');
+      root.style.setProperty('--muted-foreground', '#a0a0b0');
+      root.style.setProperty('--muted', 'rgba(255,255,255,0.1)');
     } else {
       root.style.setProperty('--background', '#f4f6f9');
-      root.style.setProperty('--card-bg', '#ffffff');
-      root.style.setProperty('--text-primary', '#1a1a2e');
-      root.style.setProperty('--text-secondary', '#666666');
-      root.style.setProperty('--border-color', '#e1e4e8');
+      root.style.setProperty('--card', '#ffffff');
+      root.style.setProperty('--card-border', '#e1e4e8');
+      root.style.setProperty('--foreground', '#1a1a2e');
+      root.style.setProperty('--muted-foreground', '#666666');
+      root.style.setProperty('--muted', '#f1f1f1');
     }
   };
 
@@ -103,64 +110,69 @@ export function Header({ onToggleMenu }) {
     return date.toLocaleDateString('pt-BR');
   };
 
-  const getTypeColor = (type) => {
+  // Ícone baseado no tipo da notificação
+  const getNotificationIcon = (type) => {
     switch(type) {
-      case 'success': return '#00d26a';
-      case 'warning': return '#fcd535';
-      case 'error': return '#f8312f';
-      default: return '#c333ff';
+      case 'success': return <CheckCircle size={18} />;
+      case 'warning': return <AlertTriangle size={18} />;
+      case 'error': return <XCircle size={18} />;
+      default: return <Info size={18} />;
     }
   };
 
   return (
-    <header className="app-header">
+    <header className="header">
       {/* ESQUERDA: Menu Mobile e Bot Selector */}
       <div className="header-left">
-        <button className="menu-toggle-btn" onClick={onToggleMenu}>
+        <button className="mobile-menu-btn" onClick={onToggleMenu}>
           <Menu size={24} />
         </button>
 
-        <div className="bot-selector-container">
+        {/* --- SELETOR DE BOTS (ESTILO ANTIGO) --- */}
+        <div className="bot-selector-wrapper">
           <button 
-            className="bot-selector-btn"
+            className={`bot-selector-btn ${isBotMenuOpen ? 'active' : ''}`}
             onClick={() => setIsBotMenuOpen(!isBotMenuOpen)}
           >
-            <div className="bot-icon-wrapper">
-              <Bot size={20} />
+            <div className="bot-icon-circle">
+              <Bot size={18} />
             </div>
             <span className="bot-name">
               {selectedBot ? selectedBot.nome : 'Selecionar Bot'}
             </span>
-            <ChevronDown size={16} className={`chevron ${isBotMenuOpen ? 'rotate' : ''}`} />
+            <ChevronDown size={14} className="chevron-icon" />
           </button>
 
           {isBotMenuOpen && (
-            <div className="bot-dropdown">
-              <div className="profile-dropdown-header" style={{ fontWeight: 'bold' }}>Seus Bots</div>
+            <div className="bot-dropdown-menu">
+              <div className="dropdown-header">SEUS BOTS</div>
+              
               {bots.length === 0 ? (
-                <div className="empty-state">Nenhum bot encontrado</div>
+                <div style={{padding: '20px', textAlign: 'center', color: '#888'}}>Nenhum bot</div>
               ) : (
                 bots.map(bot => (
                   <div 
                     key={bot.id} 
-                    className="profile-dropdown-item"
+                    className={`dropdown-item ${selectedBot?.id === bot.id ? 'selected' : ''}`}
                     onClick={() => {
                       changeBot(bot);
                       setIsBotMenuOpen(false);
                     }}
                   >
+                    <div className="bot-mini-icon">
+                      <Bot size={14} />
+                    </div>
                     <span>{bot.nome}</span>
-                    {selectedBot?.id === bot.id && <Check size={16} style={{ marginLeft: 'auto', color: '#00d26a' }} />}
+                    {selectedBot?.id === bot.id && <Check size={14} className="check-icon" />}
                   </div>
                 ))
               )}
-              <div className="profile-dropdown-divider"></div>
+              
               <div 
-                className="profile-dropdown-item"
+                className="dropdown-footer"
                 onClick={() => { navigate('/bots/new'); setIsBotMenuOpen(false); }}
-                style={{ color: '#c333ff', fontWeight: 'bold' }}
               >
-                + Criar Novo Bot
+                + CRIAR NOVO BOT
               </div>
             </div>
           )}
@@ -173,9 +185,10 @@ export function Header({ onToggleMenu }) {
           {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
-        <div className="notification-wrapper" style={{ position: 'relative' }}>
+        {/* --- NOTIFICAÇÕES (ESTILO NOVO NA CAIXA ANTIGA) --- */}
+        <div className="notification-dropdown-wrapper" ref={notifRef}>
           <button 
-            className="icon-btn"
+            className={`icon-btn ${isNotificationOpen ? 'active' : ''}`}
             onClick={() => {
                setIsNotificationOpen(!isNotificationOpen);
                setIsProfileMenuOpen(false);
@@ -187,16 +200,22 @@ export function Header({ onToggleMenu }) {
           </button>
 
           {isNotificationOpen && (
-            <div className="notification-dropdown">
+            <div className="notification-dropdown-menu">
               <div className="notification-header">
-                <span>Notificações</span>
+                <h4>Notificações</h4>
                 {unreadCount > 0 && (
-                  <button className="mark-read-btn" onClick={handleMarkAllRead}>Ler todas</button>
+                  <button className="mark-all-read" onClick={handleMarkAllRead}>
+                    Marcar todas como lidas
+                  </button>
                 )}
               </div>
+              
               <div className="notification-list">
                 {notifications.length === 0 ? (
-                  <div className="empty-state">Nenhuma notificação nova</div>
+                  <div className="empty-state">
+                    <Bell size={40} style={{ opacity: 0.2, marginBottom: '10px' }} />
+                    <p>Você não tem novas notificações.</p>
+                  </div>
                 ) : (
                   notifications.map((notif) => (
                     <div 
@@ -204,11 +223,13 @@ export function Header({ onToggleMenu }) {
                       className={`notification-item ${!notif.read ? 'unread' : ''}`}
                       onClick={() => !notif.read && handleMarkAsRead(notif.id)}
                     >
-                      <div className="notif-indicator" style={{ backgroundColor: getTypeColor(notif.type) }}></div>
-                      <div className="notif-content">
-                        <div className="notif-title">{notif.title}</div>
-                        <div className="notif-message">{notif.message}</div>
-                        <div className="notif-time">{formatTime(notif.created_at)}</div>
+                      <div className={`notification-icon ${notif.type}`}>
+                        {getNotificationIcon(notif.type)}
+                      </div>
+                      <div className="notification-content">
+                        <h5 className="notification-title">{notif.title}</h5>
+                        <p className="notification-text">{notif.message}</p>
+                        <span className="notification-time">{formatTime(notif.created_at)}</span>
                       </div>
                     </div>
                   ))
@@ -218,44 +239,36 @@ export function Header({ onToggleMenu }) {
           )}
         </div>
 
-        <div className="profile-wrapper" style={{ position: 'relative' }}>
-          <button 
-            className="profile-btn"
+        {/* --- PERFIL (ESTILO ANTIGO) --- */}
+        <div className="profile-dropdown-wrapper">
+          <div 
+            className="user-avatar"
             onClick={() => {
               setIsProfileMenuOpen(!isProfileMenuOpen);
               setIsNotificationOpen(false);
             }}
           >
-            <div className="avatar-placeholder">
-              {user?.name ? user.name.substring(0, 2).toUpperCase() : 'AD'}
-            </div>
-            <div className="profile-info-desk">
-               <span className="profile-name-text">{user?.name || 'Admin'}</span>
-               <ChevronDown size={14} />
-            </div>
-          </button>
+            {user?.name ? user.name.substring(0, 2).toUpperCase() : 'AD'}
+          </div>
 
           {isProfileMenuOpen && (
-            <div className="profile-dropdown">
+            <div className="profile-dropdown-menu">
               <div className="profile-dropdown-header">
-                <div className="avatar-large">
+                <div className="profile-avatar-large">
                   {user?.name ? user.name.substring(0, 2).toUpperCase() : 'AD'}
                 </div>
-                <div>
-                  <div className="profile-name">{user?.name || 'Admin'}</div>
-                  <div className="profile-email">{user?.username}</div>
-                </div>
+                <div className="profile-name">{user?.name || 'Administrador'}</div>
+                <div className="profile-email">{user?.username}</div>
               </div>
-              <div className="profile-dropdown-divider"></div>
+              
               <div className="profile-dropdown-item" onClick={() => navigate('/perfil')}>
                 <User size={16} /> <span>Meu Perfil</span>
               </div>
               <div className="profile-dropdown-item" onClick={() => navigate('/config')}>
                 <Settings size={16} /> <span>Configurações</span>
               </div>
-              <div className="profile-dropdown-divider"></div>
               <div className="profile-dropdown-item danger" onClick={handleLogout}>
-                <LogOut size={16} /> <span>Sair</span>
+                <LogOut size={16} /> <span>Sair do Sistema</span>
               </div>
             </div>
           )}
