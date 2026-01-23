@@ -9,59 +9,65 @@ import './Login.css';
 export function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState(''); // Estado para o token
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const turnstileRef = useRef(null);
+  const widgetId = useRef(null); // Guardar ID do widget para resetar
 
-  // 🛡️ Carrega o Script do Turnstile e Renderiza o Widget
   useEffect(() => {
-    const scriptId = 'cloudflare-turnstile-script';
-    
-    // Função para renderizar o widget
-    const renderWidget = () => {
+    // Função limpa para inicializar o Turnstile
+    const initTurnstile = () => {
       if (window.turnstile && turnstileRef.current) {
-        window.turnstile.render(turnstileRef.current, {
-          sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SU SITE KEY DA IMAGEM
-          callback: (token) => {
-            console.log('Turnstile resolvido:', token);
-            setTurnstileToken(token);
-          },
-          'expired-callback': () => {
-            setTurnstileToken(''); // Limpa se expirar
-          },
-        });
+        // Se já existir um widget, limpa antes de criar outro
+        if (widgetId.current) window.turnstile.remove(widgetId.current);
+
+        try {
+          const id = window.turnstile.render(turnstileRef.current, {
+            sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SUA CHAVE PÚBLICA
+            theme: 'dark', // Para combinar com seu site
+            callback: (token) => {
+              console.log('✅ Captcha resolvido:', token);
+              setTurnstileToken(token);
+            },
+            'expired-callback': () => {
+              console.warn('⚠️ Captcha expirou');
+              setTurnstileToken('');
+            },
+            'error-callback': () => {
+              console.error('❌ Erro no widget Turnstile');
+            }
+          });
+          widgetId.current = id;
+        } catch (e) {
+          console.error("Erro ao renderizar Turnstile:", e);
+        }
       }
     };
 
-    if (!document.getElementById(scriptId)) {
+    // Injeta script se não existir
+    if (!document.getElementById('cf-turnstile')) {
       const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.id = 'cf-turnstile';
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.defer = true;
-      script.onload = renderWidget;
+      script.onload = initTurnstile;
       document.body.appendChild(script);
     } else {
-      // Se já existe, tenta renderizar com um pequeno delay para garantir
-      setTimeout(renderWidget, 500);
+      // Se script já existe, espera um pouco e renderiza
+      setTimeout(initTurnstile, 100);
     }
-
-    // Cleanup: remove o widget se sair da tela (opcional, mas boa prática)
-    return () => {
-      // window.turnstile?.remove(); // API do turnstile pode variar, deixamos simples
-    };
   }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     
-    // 🛡️ Validação do Turnstile
     if (!turnstileToken) {
       Swal.fire({
-        title: 'Verificação Necessária',
-        text: 'Por favor, confirme que você é humano clicando na caixa de verificação.',
+        title: 'Verificação Obrigatória',
+        text: 'Aguarde a verificação de segurança (Cloudflare) completar.',
         icon: 'warning',
         background: '#1b1730',
         color: '#fff',
@@ -73,21 +79,19 @@ export function Login() {
     setLoading(true);
     
     try {
-      // Passa o token junto com usuário e senha
       await login(username, password, turnstileToken);
       navigate('/');
     } catch (error) {
-      console.error("Erro no login:", error);
+      console.error("Login falhou:", error);
       
-      let msg = 'Erro ao conectar com o servidor.';
-      if (error.response?.status === 400) {
-        msg = error.response.data.detail || 'Verificação de segurança falhou.';
-      } else if (error.response?.status === 401) {
-        msg = 'Usuário ou senha incorretos.';
+      let msg = 'Erro de conexão.';
+      if (error.response) {
+        // Pega mensagem exata do backend se houver
+        msg = error.response.data.detail || 'Dados incorretos.';
       }
 
       Swal.fire({
-        title: 'Erro no Login',
+        title: 'Falha no Login',
         text: msg,
         icon: 'error',
         background: '#1b1730',
@@ -95,10 +99,11 @@ export function Login() {
         confirmButtonColor: '#c333ff'
       });
       
-      // Reseta o widget do Turnstile em caso de erro
-      if (window.turnstile) window.turnstile.reset();
-      setTurnstileToken('');
-      
+      // Reseta o captcha para o usuário tentar de novo
+      if (window.turnstile && widgetId.current) {
+        window.turnstile.reset(widgetId.current);
+        setTurnstileToken('');
+      }
     } finally {
       setLoading(false);
     }
@@ -135,19 +140,23 @@ export function Login() {
             />
           </div>
 
-          {/* 🛡️ WIDGET CLOUDFLARE TURNSTILE */}
+          {/* Container do Widget - Importante ter altura mínima para não pular layout */}
           <div 
             ref={turnstileRef} 
-            className="turnstile-container" 
-            style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}
-          ></div>
+            style={{ 
+              minHeight: '65px', 
+              margin: '15px 0', 
+              display: 'flex', 
+              justifyContent: 'center' 
+            }} 
+          />
 
           <Button 
             type="submit" 
             style={{ width: '100%', marginTop: '10px' }}
             disabled={loading}
           >
-            {loading ? 'Entrando...' : 'Entrar no Sistema'} <ArrowRight size={18} />
+            {loading ? 'Verificando...' : 'Entrar no Sistema'} <ArrowRight size={18} />
           </Button>
 
           <div style={{ marginTop: '20px', textAlign: 'center' }}>
