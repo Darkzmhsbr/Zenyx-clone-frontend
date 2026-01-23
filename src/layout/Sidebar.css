@@ -30,7 +30,7 @@
   height: 70px;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Espaça logo e botão X */
+  justify-content: space-between;
   padding: 0 20px;
   border-bottom: 1px solid var(--sidebar-border);
 }
@@ -48,7 +48,7 @@
   padding: 20px 0;
   display: flex;
   flex-direction: column;
-  gap: 5px; /* Espaçamento entre itens */
+  gap: 5px;
 }
 
 /* Itens do Menu */
@@ -56,7 +56,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 25px; /* Padding padrão */
+  padding: 12px 25px;
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.95rem;
@@ -77,6 +77,49 @@
   border-right-color: var(--primary-color);
 }
 
+/* 🔥 NOVO: ESTILOS PARA ITENS BLOQUEADOS (ONBOARDING) */
+.nav-item.locked {
+  cursor: not-allowed !important;
+  opacity: 0.4;
+  pointer-events: none; /* Desabilita cliques */
+  position: relative;
+}
+
+.nav-item.locked:hover {
+  background-color: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Ícone de cadeado aparece no final */
+.nav-item.locked svg:last-child {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+/* Tooltip ao passar o mouse (opcional - requer JS adicional) */
+.nav-item.locked::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  margin-left: 10px;
+  z-index: 1001;
+}
+
+.nav-item.locked:hover::after {
+  opacity: 1;
+}
+
 /* --- 🔥 ÁREA SUPER ADMIN (NOVO) --- */
 .admin-section {
   margin-bottom: 10px;
@@ -85,7 +128,7 @@
 }
 
 .admin-section-title {
-  padding: 0 25px; /* Alinhado com o nav-item */
+  padding: 0 25px;
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--primary-color);
@@ -97,11 +140,11 @@
 }
 
 .nav-item.super-admin {
-  color: #ffcc00 !important; /* Dourado forçado */
+  color: #ffcc00 !important;
 }
 
 .nav-item.super-admin:hover {
-  background: rgba(255, 204, 0, 0.1); /* Brilho dourado suave */
+  background: rgba(255, 204, 0, 0.1);
   color: #ffd700 !important;
 }
 
@@ -123,7 +166,7 @@
   flex-direction: column;
 }
 
-/* ✅ CORREÇÃO: Estilo para group-header (Meus Bots) */
+/* Estilo para group-header (Meus Bots) */
 .nav-item.group-header {
   display: flex;
   align-items: center;
@@ -143,7 +186,7 @@
   color: #fff;
 }
 
-/* ✅ CORREÇÃO: Estilo para group-label (Meus Bots) */
+/* Estilo para group-label (Meus Bots) */
 .group-label {
   display: flex;
   align-items: center;
@@ -185,15 +228,21 @@
 
 /* Indentação dos subitens */
 .nav-subitems .nav-item {
-  padding-left: 57px; /* 25px padding + 20px icon + 12px gap */
+  padding-left: 57px;
   font-size: 0.9rem;
+}
+
+/* 🔥 NOVO: Subitens bloqueados também */
+.nav-subitems .nav-item.locked {
+  padding-left: 57px; /* Mantém indentação */
 }
 
 /* --- LOGOUT BUTTON --- */
 .logout-btn {
-  margin-top: auto; /* Empurra para o fundo se houver espaço */
+  margin-top: auto;
   color: #ef4444 !important;
 }
+
 .logout-btn:hover {
   background-color: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.2);
@@ -219,12 +268,12 @@
 
 @media (max-width: 768px) {
   .sidebar {
-    transform: translateX(-100%); /* Escondido por padrão no mobile */
-    width: 280px; /* Um pouco mais largo no mobile para toque */
+    transform: translateX(-100%);
+    width: 280px;
   }
 
   .sidebar.open {
-    transform: translateX(0); /* Mostra quando open */
+    transform: translateX(0);
     box-shadow: 10px 0 30px rgba(0,0,0,0.5);
   }
 
@@ -252,5 +301,10 @@
   .sidebar-overlay.open {
     opacity: 1;
     visibility: visible;
+  }
+
+  /* Tooltip não aparece no mobile */
+  .nav-item.locked::after {
+    display: none;
   }
 }

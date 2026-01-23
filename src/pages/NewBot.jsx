@@ -6,11 +6,13 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { botService } from '../services/api';
 import { useBot } from '../context/BotContext';
+import { useAuth } from '../context/AuthContext'; // 🔥 NOVO
 import './Bots.css';
 
 export function NewBot() {
   const navigate = useNavigate();
   const { refreshBots } = useBot();
+  const { updateOnboarding } = useAuth(); // 🔥 NOVO: Hook para marcar onboarding
   
   // Controle de Passos: 'selection' | 'form'
   const [step, setStep] = useState('selection');
@@ -47,16 +49,23 @@ export function NewBot() {
       // 2. Atualiza lista no contexto
       await refreshBots();
 
+      // 🔥 NOVO: 3. Marca ETAPA 1 como completa
+      updateOnboarding('botCreated', true);
+
       Swal.fire({
-        title: 'Sucesso!',
-        text: 'Bot conectado com sucesso.',
+        title: '✅ Bot Criado!',
+        html: `
+          <p style="margin-bottom: 10px;">Seu bot foi conectado com sucesso!</p>
+          <p style="color: #888; font-size: 0.9rem;">Próximo passo: Configurar o bot</p>
+        `,
         icon: 'success',
-        timer: 1500,
+        timer: 2000,
         showConfirmButton: false,
-        background: '#151515', color: '#fff'
+        background: '#151515', 
+        color: '#fff'
       });
 
-      // 3. Redireciona para a configuração JÁ NA ABA CERTA
+      // 4. Redireciona para a configuração JÁ NA ABA CERTA
       // Passamos 'initialTab' no state da navegação
       navigate(`/bots/config/${response.id}`, { 
         state: { initialTab: targetTab } 
@@ -68,7 +77,8 @@ export function NewBot() {
         title: 'Erro!',
         text: error.response?.data?.detail || 'Falha ao criar bot.',
         icon: 'error',
-        background: '#151515', color: '#fff'
+        background: '#151515', 
+        color: '#fff'
       });
     } finally {
       setLoading(false);

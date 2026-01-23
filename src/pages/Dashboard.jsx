@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // 🔥 NOVO
 import { 
   Users, 
   TrendingUp, 
@@ -12,8 +13,10 @@ import {
   CreditCard,
   Calendar as CalendarIcon, 
   ChevronDown,
-  LayoutGrid, // Ícone novo para "Todos os bots"
-  Bot         // Ícone novo para "Bot único"
+  LayoutGrid,
+  Bot,
+  X, // 🔥 NOVO
+  CheckCircle // 🔥 NOVO
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -25,33 +28,33 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-// --- IMPORTS DO CALENDÁRIO ---
 import DatePicker, { registerLocale } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import ptBR from 'date-fns/locale/pt-BR'; // Para português
+import ptBR from 'date-fns/locale/pt-BR';
 
 import { dashboardService } from '../services/api';
-import { useBot } from '../context/BotContext'; 
+import { useBot } from '../context/BotContext';
 import { Button } from '../components/Button';
 import './Dashboard.css';
 
-// Registra idioma português no calendário
 registerLocale('pt-BR', ptBR);
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { selectedBot } = useBot(); 
+  const { selectedBot } = useBot();
+  const { onboarding } = useAuth(); // 🔥 NOVO
   const [loading, setLoading] = useState(true);
   
-  // --- ESTADO DE VISÃO (GLOBAL OU BOT ÚNICO) ---
-  // false = Vê apenas o bot selecionado no menu lateral
-  // true = Vê a soma de todos os bots
+  // 🔥 NOVO: Estado para controlar banner de conclusão
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+
+  // Estado de visão
   const [isGlobalView, setIsGlobalView] = useState(false);
 
-  // --- ESTADO DE DATA (PADRÃO: MÊS ATUAL) ---
+  // Estado de data
   const [dateRange, setDateRange] = useState([
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1), // Dia 1 do mês atual
-    new Date() // Hoje
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    new Date()
   ]);
   const [startDate, endDate] = dateRange;
 
@@ -69,28 +72,30 @@ export function Dashboard() {
     chart_data: [] 
   });
 
-  // Efeito para recarregar quando mudar: Bot, Data ou Modo de Visão
+  // 🔥 NOVO: Verifica se acabou de completar onboarding
+  useEffect(() => {
+    // Se acabou de completar (completed = true e nunca mostrou o banner)
+    const hasSeenWelcome = localStorage.getItem('zenyx_welcome_shown');
+    if (onboarding?.completed && !hasSeenWelcome) {
+      setShowWelcomeBanner(true);
+      localStorage.setItem('zenyx_welcome_shown', 'true');
+    }
+  }, [onboarding]);
+
   useEffect(() => {
     carregarDados();
-    // eslint-disable-next-line
-  }, [selectedBot, endDate, isGlobalView]); 
+  }, [selectedBot, endDate, isGlobalView]);
 
   const carregarDados = async () => {
-    // Só busca se tiver data fim definida
     if (!startDate || !endDate) return;
 
     try {
       setLoading(true);
       
-      // LÓGICA MESTRA:
-      // Se estiver em Visão Global, mandamos null como ID.
-      // Se não, mandamos o ID do bot selecionado.
       const botId = isGlobalView ? null : (selectedBot ? selectedBot.id : null);
       
-      // Passa as datas e o ID para o serviço
       const data = await dashboardService.getStats(botId, startDate, endDate);
       
-      // Garante que chart_data seja um array
       if (!data.chart_data) data.chart_data = [];
       
       setMetrics(data);
@@ -101,17 +106,14 @@ export function Dashboard() {
     }
   };
 
-  // ✅ CORREÇÃO: formatMoney agora DIVIDE POR 100 (backend retorna centavos)
   const formatMoney = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((value || 0) / 100);
   };
 
-  // Função para alternar entre Visão Global e Bot Selecionado
   const toggleViewMode = () => {
     setIsGlobalView(!isGlobalView);
   };
 
-  // Componente visual do botão de data
   const CustomDateInput = React.forwardRef(({ value, onClick }, ref) => (
     <button className="date-filter-btn" onClick={onClick} ref={ref}>
       <CalendarIcon size={16} />
@@ -123,11 +125,120 @@ export function Dashboard() {
   return (
     <div className="dashboard-container fade-in">
       
-      {/* 1. CABEÇALHO DA PÁGINA */}
+      {/* 🔥 NOVO: Banner de Boas-Vindas após completar onboarding */}
+      {showWelcomeBanner && (
+        <div style={{
+          position: 'relative',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          padding: '20px 30px',
+          borderRadius: '12px',
+          marginBottom: '30px',
+          border: '2px solid rgba(16, 185, 129, 0.3)',
+          boxShadow: '0 8px 24px rgba(16, 185, 129, 0.2)'
+        }}>
+          <button
+            onClick={() => setShowWelcomeBanner(false)}
+            style={{
+              position: 'absolute',
+              top: '15px',
+              right: '15px',
+              background: 'none',
+              border: 'none',
+              color: 'rgba(255, 255, 255, 0.8)',
+              cursor: 'pointer',
+              padding: '4px'
+            }}
+          >
+            <X size={20} />
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '50%',
+              padding: '15px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <CheckCircle size={40} color="#fff" />
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <h2 style={{ 
+                color: '#fff', 
+                fontSize: '1.5rem', 
+                marginBottom: '10px',
+                fontWeight: 'bold'
+              }}>
+                🎉 Parabéns! Seu bot está pronto para vender!
+              </h2>
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.9)', 
+                fontSize: '1rem',
+                marginBottom: '15px',
+                lineHeight: '1.6'
+              }}>
+                Você completou com sucesso todas as etapas de configuração. Agora você tem acesso completo a todas as funcionalidades da plataforma!
+              </p>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '15px',
+                marginTop: '20px'
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  padding: '15px',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '5px' }}>✓ Bot Criado</div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.85rem' }}>Conectado e ativo</div>
+                </div>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  padding: '15px',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '5px' }}>✓ Configurado</div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.85rem' }}>Todos os dados salvos</div>
+                </div>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  padding: '15px',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '5px' }}>✓ Planos Criados</div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.85rem' }}>Pronto para vendas</div>
+                </div>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  padding: '15px',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '5px' }}>✓ Fluxo Configurado</div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.85rem' }}>Mensagens prontas</div>
+                </div>
+              </div>
+
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.8)', 
+                fontSize: '0.9rem',
+                marginTop: '20px',
+                fontStyle: 'italic'
+              }}>
+                💡 Dica: Explore o menu lateral para acessar recursos avançados como Remarketing, Funil de Vendas e Integrações!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CABEÇALHO DA PÁGINA */}
       <div className="dashboard-header">
         <div>
           <h2 className="page-title">
-            {/* Título Dinâmico */}
             {isGlobalView ? (
               <>Resumo analítico de <span className="highlight-text">todos os bots</span></>
             ) : (
@@ -138,12 +249,10 @@ export function Dashboard() {
         </div>
         
         <div className="header-actions">
-           {/* Botão de Atualizar */}
            <Button variant="ghost" size="icon" onClick={carregarDados} title="Atualizar Dados">
             <RefreshCw size={20} className={loading ? "spin" : ""} />
           </Button>
 
-          {/* BOTÃO MÁGICO DE ALTERNAR VISÃO */}
           <Button onClick={toggleViewMode} style={{ minWidth: '180px' }}>
             {isGlobalView ? (
               <>
@@ -160,10 +269,9 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* 2. TOP CARDS */}
+      {/* TOP CARDS */}
       <div className="top-cards-grid">
         
-        {/* Card 1 */}
         <div className="analytic-card">
           <div className="card-header-row">
             <span className="card-label">LEADS (NO PERÍODO)</span>
@@ -174,7 +282,6 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Card 2 */}
         <div className="analytic-card">
           <div className="card-header-row">
             <span className="card-label">NOVOS LEADS HOJE</span>
@@ -185,7 +292,6 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Card 3 */}
         <div className="analytic-card">
           <div className="card-header-row">
             <span className="card-label">ASSINANTES ATIVOS</span>
@@ -198,14 +304,13 @@ export function Dashboard() {
 
       </div>
 
-      {/* 3. GRID PRINCIPAL */}
+      {/* GRID PRINCIPAL */}
       <div className="main-analytic-grid">
         
         {/* COLUNA ESQUERDA: GRÁFICO */}
         <div className="chart-section card-box">
           <div className="chart-header">
              
-             {/* Info Esquerda */}
              <div className="chart-info">
                <div className="icon-circle">
                  <ShoppingBag size={20} />
@@ -218,7 +323,6 @@ export function Dashboard() {
                </div>
              </div>
 
-             {/* Filtro de Data */}
              <div className="chart-filter-wrapper">
                 <DatePicker
                   selectsRange={true}

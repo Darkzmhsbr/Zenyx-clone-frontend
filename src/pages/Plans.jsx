@@ -4,21 +4,25 @@ import {
   Plus, Trash2, Calendar, DollarSign, Edit2, Check, X, Tag 
 } from 'lucide-react';
 import { planService } from '../services/api';
-import { useBot } from '../context/BotContext'; 
+import { useBot } from '../context/BotContext';
+import { useAuth } from '../context/AuthContext'; // 🔥 NOVO
+import { useNavigate } from 'react-router-dom'; // 🔥 NOVO
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
 import './Plans.css';
 
 export function Plans() {
-  const { selectedBot } = useBot(); 
+  const { selectedBot } = useBot();
+  const { updateOnboarding, onboarding } = useAuth(); // 🔥 NOVO
+  const navigate = useNavigate(); // 🔥 NOVO
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Estado para criação
   const [newPlan, setNewPlan] = useState({ 
     nome_exibicao: '', 
-    preco_atual: '', // Corrigido nome do campo
+    preco_atual: '',
     dias_duracao: '' 
   });
 
@@ -45,7 +49,6 @@ export function Plans() {
     }
   };
 
-  // 🔥 CORREÇÃO 1: Enviar selectedBot.id, não o objeto selectedBot
   const handleCreate = async () => {
     if (!newPlan.nome_exibicao || !newPlan.preco_atual || !newPlan.dias_duracao) {
       return Swal.fire('Atenção', 'Preencha todos os campos', 'warning');
@@ -62,6 +65,34 @@ export function Plans() {
       Swal.fire('Sucesso', 'Plano criado!', 'success');
       setNewPlan({ nome_exibicao: '', preco_atual: '', dias_duracao: '' });
       carregarPlanos();
+
+      // 🔥 NOVO: Marca ETAPA 3 como completa
+      updateOnboarding('plansCreated', true);
+
+      // 🔥 NOVO: Se está em onboarding, mostra próximo passo
+      if (!onboarding?.completed && onboarding?.steps.botConfigured && !onboarding?.steps.flowConfigured) {
+        setTimeout(() => {
+          Swal.fire({
+            title: 'Plano Criado! 🎉',
+            html: `
+              <p>Seu primeiro plano está ativo!</p>
+              <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">
+                Último passo: Configure o fluxo de mensagens do bot
+              </p>
+            `,
+            icon: 'success',
+            background: '#1b1730',
+            color: '#fff',
+            confirmButtonColor: '#c333ff',
+            confirmButtonText: 'Configurar Fluxo'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              navigate('/flow');
+            }
+          });
+        }, 1500);
+      }
+
     } catch (error) {
       Swal.fire('Erro', 'Não foi possível criar o plano', 'error');
     } finally {
@@ -74,14 +105,13 @@ export function Plans() {
     setIsEditModalOpen(true);
   };
 
-  // 🔥 CORREÇÃO 2: Enviar 3 argumentos: (BotID, PlanoID, Dados)
   const handleUpdate = async () => {
     if (!editingPlan) return;
     try {
       await planService.updatePlan(
-          selectedBot.id,      // Argumento 1: ID do Bot
-          editingPlan.id,      // Argumento 2: ID do Plano
-          {                    // Argumento 3: Dados
+          selectedBot.id,
+          editingPlan.id,
+          {
             nome_exibicao: editingPlan.nome_exibicao,
             preco_atual: parseFloat(editingPlan.preco_atual),
             dias_duracao: parseInt(editingPlan.dias_duracao),
@@ -99,7 +129,6 @@ export function Plans() {
     }
   };
 
-  // 🔥 CORREÇÃO 3: Enviar BotID e PlanoID
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: 'Tem certeza?',

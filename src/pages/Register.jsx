@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Lock, User, Mail, UserPlus, ArrowRight } from 'lucide-react';
 import { Button } from '../components/Button';
-import { authService } from '../services/api'; // 🔥 Precisamos atualizar o api.js depois
+import { authService } from '../services/api';
 import Swal from 'sweetalert2';
 import './Login.css';
 
@@ -14,39 +15,50 @@ export function Register() {
     confirmPassword: '',
     fullName: ''
   });
-  const [turnstileToken, setTurnstileToken] = useState(''); // Estado para o token
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
   const turnstileRef = useRef(null);
+  const widgetId = useRef(null);
 
   // 🛡️ Carrega o Script do Turnstile e Renderiza o Widget
   useEffect(() => {
-    const scriptId = 'cloudflare-turnstile-script';
-    
-    const renderWidget = () => {
+    const initTurnstile = () => {
       if (window.turnstile && turnstileRef.current) {
-        window.turnstile.render(turnstileRef.current, {
-          sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SU SITE KEY
-          callback: (token) => {
-            setTurnstileToken(token);
-          },
-          'expired-callback': () => {
-            setTurnstileToken('');
-          },
-        });
+        if (widgetId.current) window.turnstile.remove(widgetId.current);
+
+        try {
+          const id = window.turnstile.render(turnstileRef.current, {
+            sitekey: '0x4AAAAAACOaNAV9wTIXZkZy',
+            theme: 'dark',
+            callback: (token) => {
+              setTurnstileToken(token);
+            },
+            'expired-callback': () => {
+              setTurnstileToken('');
+            },
+            'error-callback': () => {
+              console.error('❌ Erro no widget Turnstile');
+            }
+          });
+          widgetId.current = id;
+        } catch (e) {
+          console.error("Erro ao renderizar Turnstile:", e);
+        }
       }
     };
 
-    if (!document.getElementById(scriptId)) {
+    if (!document.getElementById('cf-turnstile')) {
       const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.id = 'cf-turnstile';
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.defer = true;
-      script.onload = renderWidget;
+      script.onload = initTurnstile;
       document.body.appendChild(script);
     } else {
-      setTimeout(renderWidget, 500);
+      setTimeout(initTurnstile, 100);
     }
   }, []);
 
@@ -113,41 +125,43 @@ export function Register() {
     setLoading(true);
 
     try {
-      // 🔥 IMPORTANTE: Seu api.js precisa ser atualizado para aceitar o token
-      // Mas aqui já estamos passando ele
+      // 1️⃣ REGISTRAR O USUÁRIO
       const response = await authService.register(
         formData.username,
         formData.email,
         formData.password,
         formData.fullName || formData.username,
-        turnstileToken // Enviando o token
+        turnstileToken
       );
 
       console.log("✅ Cadastro realizado:", response);
 
-      // Salva o token automaticamente após registro
-      localStorage.setItem('zenyx_token', response.access_token);
-      
-      const userData = {
-        id: response.user_id,
-        username: response.username,
-        name: response.username,
-        role: 'admin'
-      };
-      
-      localStorage.setItem('zenyx_admin_user', JSON.stringify(userData));
+      // 2️⃣ FAZER LOGIN AUTOMÁTICO APÓS REGISTRO
+      await login(formData.username, formData.password, turnstileToken);
 
+      // 3️⃣ MOSTRAR MENSAGEM DE SUCESSO
       Swal.fire({
-        title: 'Cadastro Realizado!',
-        text: 'Sua conta foi criada com sucesso. Redirecionando...',
+        title: 'Bem-vindo ao Zenyx! 🎉',
+        html: `
+          <p style="margin-bottom: 15px;">Sua conta foi criada com sucesso!</p>
+          <p style="color: #888; font-size: 0.9rem;">Vamos configurar seu primeiro bot em 4 passos simples:</p>
+          <div style="text-align: left; margin: 20px auto; max-width: 300px;">
+            <p>✅ 1. Criar Bot</p>
+            <p>⚙️ 2. Configurar Bot</p>
+            <p>💰 3. Criar Planos</p>
+            <p>💬 4. Configurar Fluxo</p>
+          </div>
+        `,
         icon: 'success',
         background: '#1b1730',
         color: '#fff',
         confirmButtonColor: '#c333ff',
-        timer: 2000,
+        confirmButtonText: 'Começar Passo 1',
+        timer: 5000,
         timerProgressBar: true
       }).then(() => {
-        navigate('/dashboard');
+        // 4️⃣ 🔥 REDIRECIONA PARA ONBOARDING (PASSO 1: CRIAR BOT)
+        navigate('/bots/new');
       });
 
     } catch (error) {
@@ -171,7 +185,9 @@ export function Register() {
       });
 
       // Reseta o Turnstile
-      if (window.turnstile) window.turnstile.reset();
+      if (window.turnstile && widgetId.current) {
+        window.turnstile.reset(widgetId.current);
+      }
       setTurnstileToken('');
 
     } finally {
@@ -250,9 +266,13 @@ export function Register() {
           {/* 🛡️ WIDGET CLOUDFLARE TURNSTILE */}
           <div 
             ref={turnstileRef} 
-            className="turnstile-container" 
-            style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}
-          ></div>
+            style={{ 
+              minHeight: '65px',
+              margin: '15px 0', 
+              display: 'flex', 
+              justifyContent: 'center' 
+            }}
+          />
 
           <Button 
             type="submit" 

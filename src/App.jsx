@@ -3,10 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { BotProvider } from './context/BotContext';
 import { AuthProvider } from './context/AuthContext';
 import { MainLayout } from './layout/MainLayout';
-// ✅ CORREÇÃO: Importação nomeada com chaves { Login }
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { LandingPage } from './pages/LandingPage'; // 🆕 LANDING PAGE
+import { LandingPage } from './pages/LandingPage';
 
 import { Dashboard } from './pages/Dashboard';
 import { Contacts } from './pages/Contacts';
@@ -22,11 +21,11 @@ import { AdminManager } from './pages/AdminManager';
 import { OrderBump } from './pages/OrderBump';
 import { Profile } from './pages/Profile';
 import { Tracking } from './pages/Tracking';
-import { AuditLogs } from './pages/AuditLogs'; // FASE 3.3
-import { SuperAdmin } from './pages/SuperAdmin'; // 🆕 FASE 3.4
-import { SuperAdminUsers } from './pages/SuperAdminUsers'; // 🆕 FASE 3.4
+import { AuditLogs } from './pages/AuditLogs';
+import { SuperAdmin } from './pages/SuperAdmin';
+import { SuperAdminUsers } from './pages/SuperAdminUsers';
 
-// 🔥 IMPORTANDO A LOJA REAL
+// IMPORTANDO A LOJA REAL
 import { MiniAppHome } from './pages/miniapp/MiniAppHome';
 import { MiniAppCategory } from './pages/miniapp/MiniAppCategory';
 import { MiniAppCheckout } from './pages/miniapp/MiniAppCheckout';
@@ -48,10 +47,8 @@ const PlaceholderPage = ({ title }) => (
 );
 
 function App() {
-  // 🔥 LÓGICA DE CAPTURA GLOBAL (IGUAL AO SEU OUTRO PROJETO)
-  // Isso roda uma vez quando o app abre e garante que o usuário seja identificado
+  // Lógica de captura global do Telegram
   useEffect(() => {
-    // Verifica se o script do Telegram já carregou ou injeta se necessário (fallback)
     if (!window.Telegram) {
         const script = document.createElement('script');
         script.src = "https://telegram.org/js/telegram-web-app.js";
@@ -71,28 +68,25 @@ function App() {
             if (user) {
                 console.log("✅ [App.js] Cliente Telegram Detectado:", user.first_name);
                 
-                // 💾 SALVA NO LOCALSTORAGE (A Chave do Sucesso)
                 localStorage.setItem('telegram_user_id', user.id);
                 localStorage.setItem('telegram_user_first_name', user.first_name);
                 
                 if (user.username) {
                     localStorage.setItem('telegram_username', user.username);
                 } else {
-                    localStorage.removeItem('telegram_username'); // Limpa se não tiver
+                    localStorage.removeItem('telegram_username');
                 }
                 
-                // Aplica cores do tema
                 try {
                     document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
                     document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
                 } catch (e) {}
                 
-                clearInterval(checkTelegram); // Para de verificar assim que achar
+                clearInterval(checkTelegram);
             }
         }
-    }, 200); // Verifica a cada 200ms
+    }, 200);
 
-    // Para de tentar depois de 5 segundos para não ficar rodando pra sempre
     setTimeout(() => clearInterval(checkTelegram), 5000);
 
     return () => clearInterval(checkTelegram);
@@ -103,7 +97,7 @@ function App() {
       <BotProvider>
         <Router>
           <Routes>
-            {/* 🆕 ROTA DA LANDING PAGE NA RAIZ */}
+            {/* ROTA DA LANDING PAGE NA RAIZ */}
             <Route path="/" element={<LandingPage />} />
             
             {/* Rotas de Autenticação */}
@@ -111,7 +105,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/logout" element={<Logout />} />
             
-            {/* 🔥 ROTAS PÚBLICAS DA LOJA (MINI APP) */}
+            {/* ROTAS PÚBLICAS DA LOJA (MINI APP) */}
             <Route path="/loja/:botId" element={<MiniAppHome />} />
             <Route path="/loja/:botId/categoria/:slug" element={<MiniAppCategory />} />
             <Route path="/loja/:botId/checkout" element={<MiniAppCheckout />} />
@@ -139,7 +133,7 @@ function App() {
               {/* FASE 3.3: ROTA DE AUDIT LOGS */}
               <Route path="/audit-logs" element={<AuditLogs />} />
               
-              {/* 👑 FASE 3.4: ROTAS SUPER ADMIN */}
+              {/* FASE 3.4: ROTAS SUPER ADMIN */}
               <Route path="/superadmin" element={<SuperAdmin />} />
               <Route path="/superadmin/users" element={<SuperAdminUsers />} />
               
