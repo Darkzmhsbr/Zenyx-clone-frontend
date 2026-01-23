@@ -6,7 +6,7 @@ import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Login.css';
 
-// 🔑 Chave do Site Key (Defina aqui ou em variáveis de ambiente)
+// Sua chave do Cloudflare
 const TURNSTILE_SITE_KEY = '0x4AAAAAACOUmpPNTu0O44Tfoa_r8qOZzJs';
 
 export function Login() {
@@ -15,32 +15,51 @@ export function Login() {
   const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // Referência para o elemento onde o widget vai ser desenhado
+  const turnstileContainer = useRef(null);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
-  const turnstileRef = useRef(null);
 
-  // ✅ Configuração do Turnstile (Cloudflare)
+  // ✅ EFEITO MÁGICO: Força o widget a aparecer assim que a tela carrega
   useEffect(() => {
-    // Função global que o Cloudflare chama quando verifica com sucesso
-    window.onTurnstileSuccess = function(token) {
-      console.log('✅ Turnstile token recebido:', token.substring(0, 15) + '...');
-      setTurnstileToken(token);
+    // Função para renderizar o widget
+    const renderTurnstile = () => {
+      if (window.turnstile && turnstileContainer.current) {
+        // Limpa qualquer instância anterior para não duplicar
+        turnstileContainer.current.innerHTML = ''; 
+        
+        window.turnstile.render(turnstileContainer.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          theme: 'dark', // Tema escuro para combinar com seu site
+          callback: function(token) {
+            console.log('Token recebido:', token);
+            setTurnstileToken(token);
+          },
+          'expired-callback': function() {
+            setTurnstileToken(''); // Reseta se expirar
+          }
+        });
+      }
     };
 
-    // Limpeza ao desmontar o componente
-    return () => {
-      window.onTurnstileSuccess = null;
-    };
+    // Tenta renderizar imediatamente
+    renderTurnstile();
+
+    // Segurança extra: Se o script demorar um pouco, tenta de novo em 1 segundo
+    const timer = setTimeout(renderTurnstile, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // 1. Validação do Turnstile antes de tudo
+    // Trava de segurança: Se não clicou no "não sou robô"
     if (!turnstileToken) {
       Swal.fire({
         title: 'Verificação Necessária',
-        text: 'Por favor, aguarde a verificação de segurança.',
+        text: 'Por favor, complete a verificação de segurança (Não sou um robô).',
         icon: 'warning',
         background: '#1b1730',
         color: '#fff',
@@ -52,18 +71,16 @@ export function Login() {
     setLoading(true);
     
     try {
-      // 2. Tentativa de Login
-      // Nota: Se o seu backend exige o token, você precisará passar o 
-      // turnstileToken para a função login() do seu AuthContext no futuro.
+      // Passamos o token junto (mesmo que seu backend ainda não use, o front valida)
       const success = await login(username, password, turnstileToken);
       
       if (success) {
         navigate('/');
       } else {
-        // Se falhar, reseta o token para forçar nova verificação se necessário
+        // Se errar a senha, reseta o token para forçar nova verificação
         if (window.turnstile) window.turnstile.reset();
         setTurnstileToken('');
-
+        
         Swal.fire({
           title: 'Acesso Negado',
           text: 'Usuário ou senha incorretos.',
@@ -119,24 +136,23 @@ export function Login() {
             />
           </div>
 
-          {/* Widget do Cloudflare Turnstile Inserido Aqui */}
+          {/* ONDE O CLOUDFLARE VAI APARECER */}
           <div 
-            className="turnstile-wrapper" 
-            style={{ display: 'flex', justifyContent: 'center', margin: '15px 0' }} 
-            ref={turnstileRef}
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              margin: '20px 0', 
+              minHeight: '65px' 
+            }}
           >
-            <div 
-              className="cf-turnstile" 
-              data-sitekey={TURNSTILE_SITE_KEY}
-              data-callback="onTurnstileSuccess"
-              data-theme="dark" 
-            ></div>
+            <div ref={turnstileContainer}></div> 
           </div>
 
           <Button 
             type="submit" 
             style={{ width: '100%', marginTop: '10px' }}
-            disabled={loading || !turnstileToken}
+            disabled={loading || !turnstileToken} 
+            title={!turnstileToken ? "Complete o desafio acima primeiro" : ""}
           >
             {loading ? 'Entrando...' : 'Entrar no Sistema'} <ArrowRight size={18} />
           </Button>
