@@ -28,7 +28,7 @@ import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 // -------------------------------------------------------
-// ARQUIVO CORRIGIDO: DUPLICATAS DE IMPORT REMOVIDAS AQUI
+// ARQUIVO CORRIGIDO: ROTA DO DASHBOARD AJUSTADA PARA /dashboard
 // -------------------------------------------------------
 
 export function Sidebar({ isOpen, onClose }) {
@@ -110,7 +110,8 @@ export function Sidebar({ isOpen, onClose }) {
           )}
 
           {/* MENU GERAL */}
-          <Link to="/" className={`nav-item ${isActive('/')}`} onClick={onClose}>
+          {/* 🔧 CORREÇÃO AQUI: Mudado de "/" para "/dashboard" */}
+          <Link to="/dashboard" className={`nav-item ${isActive('/dashboard')}`} onClick={onClose}>
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </Link>
