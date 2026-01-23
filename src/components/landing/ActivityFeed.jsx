@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { publicService } from '../../api';
+import { publicService } from '../../api'; 
+// 👆 A importação acima deve casar EXATAMENTE com o nome do arquivo em src/api.js
 
 export function ActivityFeed() {
   const [activities, setActivities] = useState([]);

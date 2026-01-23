@@ -80,6 +80,8 @@ export function Login() {
     
     try {
       await login(username, password, turnstileToken);
+      // 🔥 AQUI ESTÁ A CORREÇÃO CRUCIAL:
+      // Redireciona especificamente para o dashboard após o sucesso
       navigate('/dashboard');
     } catch (error) {
       console.error("Login falhou:", error);

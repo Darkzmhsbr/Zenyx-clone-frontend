@@ -45,6 +45,9 @@ api.interceptors.response.use(
       // 🔥 CORREÇÃO DO LOOP INFINITO:
       // Só redireciona se NÃO estivermos já na tela de login, registro ou home
       const path = window.location.pathname;
+      
+      // Verifica se é uma rota protegida antes de chutar para login
+      // Se estiver na Landing Page ('/'), não faz nada, pois é pública
       if (!path.includes('/login') && !path.includes('/register') && path !== '/') {
          console.log("🔄 Redirecionando para login...");
          window.location.href = '/login';
