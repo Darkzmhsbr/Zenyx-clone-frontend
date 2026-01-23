@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, Mail, UserPlus, ArrowRight } from 'lucide-react';
 import { Button } from '../components/Button';
-import { authService } from '../services/api';
+import { authService } from '../services/api'; // 🔥 Precisamos atualizar o api.js depois
 import Swal from 'sweetalert2';
-import './Login.css'; // Usa o mesmo CSS do Login
+import './Login.css';
 
 export function Register() {
   const [formData, setFormData] = useState({
@@ -14,8 +14,41 @@ export function Register() {
     confirmPassword: '',
     fullName: ''
   });
+  const [turnstileToken, setTurnstileToken] = useState(''); // Estado para o token
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const turnstileRef = useRef(null);
+
+  // 🛡️ Carrega o Script do Turnstile e Renderiza o Widget
+  useEffect(() => {
+    const scriptId = 'cloudflare-turnstile-script';
+    
+    const renderWidget = () => {
+      if (window.turnstile && turnstileRef.current) {
+        window.turnstile.render(turnstileRef.current, {
+          sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SU SITE KEY
+          callback: (token) => {
+            setTurnstileToken(token);
+          },
+          'expired-callback': () => {
+            setTurnstileToken('');
+          },
+        });
+      }
+    };
+
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = renderWidget;
+      document.body.appendChild(script);
+    } else {
+      setTimeout(renderWidget, 500);
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -64,14 +97,30 @@ export function Register() {
       return;
     }
 
+    // 🛡️ Validação do Turnstile
+    if (!turnstileToken) {
+      Swal.fire({
+        title: 'Verificação Necessária',
+        text: 'Por favor, confirme que você é humano clicando na caixa de verificação.',
+        icon: 'warning',
+        background: '#1b1730',
+        color: '#fff',
+        confirmButtonColor: '#c333ff'
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // 🔥 IMPORTANTE: Seu api.js precisa ser atualizado para aceitar o token
+      // Mas aqui já estamos passando ele
       const response = await authService.register(
         formData.username,
         formData.email,
         formData.password,
-        formData.fullName || formData.username
+        formData.fullName || formData.username,
+        turnstileToken // Enviando o token
       );
 
       console.log("✅ Cadastro realizado:", response);
@@ -107,7 +156,7 @@ export function Register() {
       let errorMessage = 'Erro ao criar conta. Tente novamente.';
       
       if (error.response?.status === 400) {
-        errorMessage = 'Usuário ou email já cadastrado.';
+        errorMessage = error.response.data.detail || 'Usuário ou email já cadastrado.';
       } else if (!error.response) {
         errorMessage = 'Erro de conexão. Verifique sua internet.';
       }
@@ -120,6 +169,11 @@ export function Register() {
         color: '#fff',
         confirmButtonColor: '#c333ff'
       });
+
+      // Reseta o Turnstile
+      if (window.turnstile) window.turnstile.reset();
+      setTurnstileToken('');
+
     } finally {
       setLoading(false);
     }
@@ -192,6 +246,13 @@ export function Register() {
               required
             />
           </div>
+
+          {/* 🛡️ WIDGET CLOUDFLARE TURNSTILE */}
+          <div 
+            ref={turnstileRef} 
+            className="turnstile-container" 
+            style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}
+          ></div>
 
           <Button 
             type="submit" 

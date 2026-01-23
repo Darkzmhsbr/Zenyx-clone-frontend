@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authService } from '../services/api';
+import axios from 'axios';
+import { authService } from '../services/api'; // Importando o service centralizado
 
 const AuthContext = createContext();
 
@@ -16,6 +17,9 @@ export function AuthProvider({ children }) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
+        
+        // Configura o token no axios globalmente
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       } catch (error) {
         console.error("Erro ao carregar usuário:", error);
         localStorage.removeItem('zenyx_token');
@@ -26,18 +30,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ============================================================
-  // 🔐 LOGIN COM TURNSTILE (✅ CORRIGIDO)
+  // 🔐 LOGIN COM API REAL E TURNSTILE
   // ============================================================
   const login = async (username, password, turnstileToken) => {
     try {
-      console.log("🔐 Iniciando login...");
-      console.log("👤 Username:", username);
-      console.log("🛡️ Turnstile Token:", turnstileToken ? "✅ Presente" : "❌ Ausente");
+      // Usando o authService em vez de chamar axios direto aqui, para manter consistência
+      // Mas como seu original tinha lógica customizada, vou manter a lógica aqui
+      // porém adaptada para enviar o token do turnstile
       
-      // ✅ CORRIGIDO: Passa o turnstileToken para o authService
-      const data = await authService.login(username, password, turnstileToken);
+      const API_URL = 'https://zenyx-gbs-testesv1-production.up.railway.app';
       
-      const { access_token, user_id, username: userName } = data;
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
+        username: username,
+        password: password,
+        turnstile_token: turnstileToken // 🔥 Enviando o token para o backend
+      });
+
+      const { access_token, user_id, username: userName } = response.data;
 
       // Salva o token JWT
       localStorage.setItem('zenyx_token', access_token);
@@ -47,12 +56,15 @@ export function AuthProvider({ children }) {
         id: user_id,
         username: userName,
         name: userName,
-        role: 'admin',
-        allowed_bots: []
+        role: 'admin', // Por enquanto todos são admin
+        allowed_bots: [] // FASE 2: Vai filtrar por owner_id
       };
 
       // Salva dados do usuário
       localStorage.setItem('zenyx_admin_user', JSON.stringify(userData));
+      
+      // Configura token no axios
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       
       // Atualiza estado
       setUser(userData);
@@ -63,29 +75,13 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("❌ Erro no login:", error);
       
-      // Se der 401 (credenciais inválidas)
-      if (error.response?.status === 401) {
-        console.error("❌ Credenciais inválidas");
-        return false;
-      }
-      
-      // Se der 400 (Turnstile falhou)
-      if (error.response?.status === 400) {
-        console.error("❌ Verificação de segurança falhou");
-        return false;
-      }
-      
-      // Se der erro de rede
-      if (!error.response) {
-        console.error("❌ Erro de conexão com o servidor");
-      }
-      
-      return false;
+      // Propaga o erro para o componente tratar (mostrar alert específico)
+      throw error; 
     }
   };
 
   // ============================================================
-  // 🚪 FUNÇÃO LOGOUT
+  // 🔥 FUNÇÃO LOGOUT
   // ============================================================
   const logout = () => {
     console.log("🚪 Fazendo logout...");
@@ -98,6 +94,9 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('zenyx_admin_user');
     localStorage.removeItem('zenyx_selected_bot');
     localStorage.removeItem('zenyx_theme');
+    
+    // Remove token do axios
+    delete axios.defaults.headers.common['Authorization'];
     
     // Força reload da página para garantir limpeza total
     window.location.href = '/login';

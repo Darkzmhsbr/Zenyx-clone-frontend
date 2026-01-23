@@ -6,75 +6,62 @@ import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Login.css';
 
-const TURNSTILE_SITE_KEY = '0x4AAAAAACOaNAV9wTIXZkZy';
-
 export function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState(''); // Estado para o token
   const [loading, setLoading] = useState(false);
-  const containerRef = useRef(null);
-  const widgetId = useRef(null);
-  
   const { login } = useAuth();
   const navigate = useNavigate();
+  const turnstileRef = useRef(null);
 
+  // 🛡️ Carrega o Script do Turnstile e Renderiza o Widget
   useEffect(() => {
-    // Função que tenta desenhar o widget
-    const tryRender = () => {
-      if (window.turnstile && containerRef.current && !widgetId.current) {
-        try {
-          // Limpa qualquer lixo anterior
-          containerRef.current.innerHTML = '';
-          
-          const id = window.turnstile.render(containerRef.current, {
-            sitekey: TURNSTILE_SITE_KEY,
-            theme: 'dark',
-            callback: (token) => {
-              console.log("Token OK:", token);
-              setTurnstileToken(token);
-            },
-            'expired-callback': () => setTurnstileToken(''),
-          });
-          widgetId.current = id;
-          return true; // Sucesso
-        } catch (e) {
-          console.error("Erro ao renderizar Turnstile:", e);
-        }
+    const scriptId = 'cloudflare-turnstile-script';
+    
+    // Função para renderizar o widget
+    const renderWidget = () => {
+      if (window.turnstile && turnstileRef.current) {
+        window.turnstile.render(turnstileRef.current, {
+          sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SU SITE KEY DA IMAGEM
+          callback: (token) => {
+            console.log('Turnstile resolvido:', token);
+            setTurnstileToken(token);
+          },
+          'expired-callback': () => {
+            setTurnstileToken(''); // Limpa se expirar
+          },
+        });
       }
-      return false;
     };
 
-    // Tenta renderizar imediatamente
-    if (!tryRender()) {
-      // Se falhar, tenta a cada 100ms por 5 segundos
-      const interval = setInterval(() => {
-        if (tryRender()) {
-          clearInterval(interval);
-        }
-      }, 100);
-      
-      // Limpa o intervalo após 5 segundos para não travar memória
-      setTimeout(() => clearInterval(interval), 5000);
-      return () => clearInterval(interval);
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = renderWidget;
+      document.body.appendChild(script);
+    } else {
+      // Se já existe, tenta renderizar com um pequeno delay para garantir
+      setTimeout(renderWidget, 500);
     }
 
-    // Cleanup ao sair da página
+    // Cleanup: remove o widget se sair da tela (opcional, mas boa prática)
     return () => {
-      if (window.turnstile && widgetId.current) {
-        window.turnstile.remove(widgetId.current);
-        widgetId.current = null;
-      }
+      // window.turnstile?.remove(); // API do turnstile pode variar, deixamos simples
     };
   }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+    
+    // 🛡️ Validação do Turnstile
     if (!turnstileToken) {
       Swal.fire({
         title: 'Verificação Necessária',
-        text: 'Por favor, aguarde o carregamento do sistema de segurança.',
+        text: 'Por favor, confirme que você é humano clicando na caixa de verificação.',
         icon: 'warning',
         background: '#1b1730',
         color: '#fff',
@@ -86,33 +73,32 @@ export function Login() {
     setLoading(true);
     
     try {
-      const success = await login(username, password, turnstileToken);
-      
-      if (success) {
-        navigate('/');
-      } else {
-        if (window.turnstile && widgetId.current) window.turnstile.reset(widgetId.current);
-        setTurnstileToken('');
-        
-        Swal.fire({
-          title: 'Acesso Negado',
-          text: 'Dados incorretos.',
-          icon: 'error',
-          background: '#1b1730',
-          color: '#fff',
-          confirmButtonColor: '#c333ff'
-        });
-      }
+      // Passa o token junto com usuário e senha
+      await login(username, password, turnstileToken);
+      navigate('/');
     } catch (error) {
-      console.error(error);
+      console.error("Erro no login:", error);
+      
+      let msg = 'Erro ao conectar com o servidor.';
+      if (error.response?.status === 400) {
+        msg = error.response.data.detail || 'Verificação de segurança falhou.';
+      } else if (error.response?.status === 401) {
+        msg = 'Usuário ou senha incorretos.';
+      }
+
       Swal.fire({
-        title: 'Erro de Conexão',
-        text: 'Não foi possível conectar ao servidor.',
+        title: 'Erro no Login',
+        text: msg,
         icon: 'error',
         background: '#1b1730',
         color: '#fff',
         confirmButtonColor: '#c333ff'
       });
+      
+      // Reseta o widget do Turnstile em caso de erro
+      if (window.turnstile) window.turnstile.reset();
+      setTurnstileToken('');
+      
     } finally {
       setLoading(false);
     }
@@ -149,26 +135,34 @@ export function Login() {
             />
           </div>
 
-          {/* ÁREA DO WIDGET */}
+          {/* 🛡️ WIDGET CLOUDFLARE TURNSTILE */}
           <div 
-            ref={containerRef} 
-            className="turnstile-wrapper"
-            style={{ minHeight: '65px', margin: '15px 0', display: 'flex', justifyContent: 'center' }}
-          >
-            {/* O Cloudflare vai injetar o iframe aqui dentro */}
-          </div>
+            ref={turnstileRef} 
+            className="turnstile-container" 
+            style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}
+          ></div>
 
           <Button 
             type="submit" 
             style={{ width: '100%', marginTop: '10px' }}
-            disabled={loading || !turnstileToken}
+            disabled={loading}
           >
             {loading ? 'Entrando...' : 'Entrar no Sistema'} <ArrowRight size={18} />
           </Button>
 
           <div style={{ marginTop: '20px', textAlign: 'center' }}>
             <p style={{ color: 'var(--muted-foreground)', fontSize: '14px' }}>
-              Não tem uma conta? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'none' }}>Criar Conta</Link>
+              Não tem uma conta?{' '}
+              <Link 
+                to="/register" 
+                style={{ 
+                  color: 'var(--primary)', 
+                  textDecoration: 'none',
+                  fontWeight: 'bold'
+                }}
+              >
+                Criar Conta
+              </Link>
             </p>
           </div>
         </form>
