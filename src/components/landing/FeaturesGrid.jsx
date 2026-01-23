@@ -1,64 +1,166 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Palette,
+  Headphones,
+  LayoutDashboard,
+  Bell,
+  Bot,
+  MapPin,
+  CreditCard,
+  Shield,
+} from 'lucide-react';
+
+const features = [
+  {
+    icon: Palette,
+    title: 'Personalização Total',
+    description: 'Customize seu bot com sua marca, cores e mensagens personalizadas.',
+  },
+  {
+    icon: Headphones,
+    title: 'Suporte Integrado',
+    description: 'Sistema de tickets e atendimento direto pelo Telegram.',
+  },
+  {
+    icon: LayoutDashboard,
+    title: 'Dashboard Completo',
+    description: 'Visualize métricas, vendas e performance em tempo real.',
+  },
+  {
+    icon: Bell,
+    title: 'Notificações Instantâneas',
+    description: 'Receba alertas de vendas, pagamentos e ações importantes.',
+  },
+  {
+    icon: Bot,
+    title: 'Automação Inteligente',
+    description: 'Fluxos automatizados para entrega, cobrança e remarketing.',
+  },
+  {
+    icon: MapPin,
+    title: 'Rastreamento Avançado',
+    description: 'Acompanhe cada cliente no funil de vendas em detalhes.',
+  },
+  {
+    icon: CreditCard,
+    title: 'Múltiplos Gateways',
+    description: 'Integração com Pushin Pay, Mercado Pago e mais.',
+  },
+  {
+    icon: Shield,
+    title: 'Segurança Máxima',
+    description: 'Criptografia de ponta e proteção total dos seus dados.',
+  },
+];
 
 export function FeaturesGrid() {
-  const features = [
-    {
-      icon: '🎨',
-      title: 'Personalização Total',
-      description: 'Customize mensagens, fluxos, planos e páginas de checkout. Crie uma experiência única para seus clientes.'
-    },
-    {
-      icon: '💬',
-      title: 'Suporte Integrado',
-      description: 'CRM completo com gestão de leads, remarketing automático inteligente e acompanhamento de cada etapa do funil.'
-    },
-    {
-      icon: '📊',
-      title: 'Dashboard Completo',
-      description: 'Controle total sobre vendas, usuários e receitas com estatísticas em tempo real e relatórios detalhados.'
-    },
-    {
-      icon: '🔔',
-      title: 'Notificações Instantâneas',
-      description: 'Receba alertas de todas as vendas, webhook personalizado para integração e acompanhe tudo em tempo real.'
-    },
-    {
-      icon: '⚡',
-      title: 'Automação Inteligente',
-      description: 'Aprovação automática de pagamentos, adição e remoção automática de membros e gestão de expiração.'
-    },
-    {
-      icon: '📈',
-      title: 'Rastreamento Avançado',
-      description: 'Meta Pixel, UTMs e códigos de venda. Rastreie origem do tráfego e otimize suas campanhas.'
-    },
-    {
-      icon: '💰',
-      title: 'Múltiplos Gateways',
-      description: 'Integração com Pushin Pay, split de pagamento automático e roteamento inteligente de transações.'
-    },
-    {
-      icon: '🔐',
-      title: 'Segurança Máxima',
-      description: 'Sistema multi-tenant isolado, autenticação JWT e backup automático de dados.'
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
     }
-  ];
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section id="recursos" className="section-container">
-      <div className="section-header">
-        <h2 className="section-title">Tudo que você precisa para crescer</h2>
-        <p className="section-subtitle">Solução completa para escalar suas vendas no Telegram</p>
+    <section id="features" ref={sectionRef} className="section-container" style={{ position: 'relative' }}>
+      {/* Background accents */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: 0,
+          width: '24rem',
+          height: '24rem',
+          background: 'rgba(168, 85, 247, 0.1)',
+          borderRadius: '50%',
+          filter: 'blur(150px)'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: '20rem',
+          height: '20rem',
+          background: 'rgba(56, 189, 248, 0.1)',
+          borderRadius: '50%',
+          filter: 'blur(120px)'
+        }} />
       </div>
 
-      <div className="features-grid">
-        {features.map((feature, index) => (
-          <div key={index} className="feature-card fade-in">
-            <div className="feature-icon">{feature.icon}</div>
-            <h3 className="feature-title">{feature.title}</h3>
-            <p className="feature-description">{feature.description}</p>
-          </div>
-        ))}
+      <div style={{ position: 'relative', zIndex: 10 }}>
+        <div className={`section-header ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
+          <span style={{
+            display: 'inline-block',
+            color: 'var(--primary)',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: '1rem'
+          }}>
+            Recursos Poderosos
+          </span>
+          <h2 className="section-title">
+            Tudo que você precisa para{' '}
+            <span style={{
+              background: 'linear-gradient(90deg, var(--primary) 0%, #38bdf8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              vender mais
+            </span>
+          </h2>
+          <p className="section-subtitle">
+            Uma plataforma completa com todas as ferramentas necessárias para
+            automatizar e escalar suas vendas no Telegram.
+          </p>
+        </div>
+
+        <div className="features-grid">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            const isEven = index % 2 === 0;
+            
+            return (
+              <div
+                key={feature.title}
+                className={`feature-card ${isVisible ? (isEven ? 'animate-slide-in-left' : 'animate-slide-in-right') : 'opacity-0'}`}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.3s ease'
+                  }}>
+                    <Icon size={28} style={{ color: 'var(--primary)' }} />
+                  </div>
+                </div>
+                <h3 className="feature-title">{feature.title}</h3>
+                <p className="feature-description">{feature.description}</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
