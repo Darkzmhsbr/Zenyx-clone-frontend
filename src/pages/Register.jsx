@@ -147,7 +147,7 @@ export function Register() {
         timer: 2000,
         timerProgressBar: true
       }).then(() => {
-        window.location.href = '/';
+        navigate('/dashboard');
       });
 
     } catch (error) {
