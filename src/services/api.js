@@ -215,134 +215,80 @@ export const dashboardService = {
   getStats: async (id = null, startDate = null, endDate = null) => {
     const params = new URLSearchParams();
     if (id) params.append('bot_id', id);
-    if (startDate) params.append('start_date', startDate.toISOString());
-    if (endDate) params.append('end_date', endDate.toISOString());
-    
-    const queryString = params.toString();
-    const url = queryString ? `/api/admin/dashboard/stats?${queryString}` : '/api/admin/dashboard/stats';
-    
-    return (await api.get(url)).data;
-  }
-};
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
 
-// ============================================================
-// 🔗 SERVIÇO DE INTEGRAÇÕES
-// ============================================================
-export const integrationService = { 
-  getConfig: async () => {
     try {
-      const response = await api.get('/api/admin/config');
+      const response = await api.get(`/api/admin/dashboard/stats?${params.toString()}`);
       return response.data;
     } catch (error) {
-      console.error("Erro ao buscar configurações:", error);
-      return {};
+      console.error('Erro ao buscar estatísticas:', error);
+      return {
+        total_sales: 0,
+        total_revenue: 0,
+        active_users: 0,
+        leads_count: 0,
+        pending_trials: 0,
+        revenue_growth: 0,
+        sales_by_plan: [],
+        recent_sales: []
+      };
     }
   },
   
-  saveConfig: async (data) => {
+  getGraphData: async (id = null, startDate = null, endDate = null, metric = 'vendas') => {
+    const params = new URLSearchParams();
+    if (id) params.append('bot_id', id);
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (metric) params.append('metric', metric);
+
     try {
-      const response = await api.post('/api/admin/config', data);
+      const response = await api.get(`/api/admin/dashboard/graph?${params.toString()}`);
       return response.data;
     } catch (error) {
-      console.error("Erro ao salvar configurações:", error);
-      throw error;
-    }
-  },
-  
-  getPushinStatus: async (botId) => {
-    if (!botId) return { status: 'desconectado' };
-    
-    try {
-      const response = await api.get(`/api/admin/integrations/pushinpay/${botId}`);
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao buscar status Pushin Pay:", error);
-      return { status: 'desconectado' };
-    }
-  },
-  
-  savePushinToken: async (botId, token) => {
-    try {
-      const response = await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token });
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao salvar token Pushin Pay:", error);
-      throw error;
+      console.error('Erro ao buscar dados do gráfico:', error);
+      return { data: [] };
     }
   }
 };
-
-// ============================================================
-// 👤 SERVIÇO DE PERFIL (✅ CORRIGIDO - ADICIONADO getStats)
-// ============================================================
-export const profileService = {
-  get: async () => (await api.get('/api/admin/profile')).data,
-  update: async (data) => (await api.post('/api/admin/profile', data)).data,
-  getStats: async () => (await api.get('/api/profile/stats')).data
-};
-
-// ============================================================
-// 📊 SERVIÇO DE TRACKING (RASTREAMENTO)
-// ============================================================
 
 export const trackingService = {
-  listFolders: async () => {
+  createFolder: async (data) => (await api.post('/api/admin/tracking/folders', data)).data,
+  listFolders: async (page = 1, perPage = 20) => {
     try {
-      const response = await api.get('/api/admin/tracking/folders');
-      return response.data;
+      return (await api.get(`/api/admin/tracking/folders?page=${page}&per_page=${perPage}`)).data;
     } catch (error) {
-      console.error("Erro ao listar pastas de tracking:", error);
-      throw error;
+      return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 };
     }
   },
+  updateFolder: async (folderId, data) => (await api.put(`/api/admin/tracking/folders/${folderId}`, data)).data,
+  deleteFolder: async (folderId) => (await api.delete(`/api/admin/tracking/folders/${folderId}`)).data,
   
-  createFolder: async (data) => {
+  createLink: async (data) => (await api.post('/api/admin/tracking/links', data)).data,
+  listLinks: async (folderId = null, page = 1, perPage = 50) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString()
+    });
+    if (folderId) params.append('folder_id', folderId);
+    
     try {
-      const response = await api.post('/api/admin/tracking/folders', data);
-      return response.data;
+      return (await api.get(`/api/admin/tracking/links?${params.toString()}`)).data;
     } catch (error) {
-      console.error("Erro ao criar pasta de tracking:", error);
-      throw error;
+      return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 };
     }
   },
+  updateLink: async (linkId, data) => (await api.put(`/api/admin/tracking/links/${linkId}`, data)).data,
+  deleteLink: async (linkId) => (await api.delete(`/api/admin/tracking/links/${linkId}`)).data,
   
-  deleteFolder: async (folderId) => {
-    try {
-      const response = await api.delete(`/api/admin/tracking/folders/${folderId}`);
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao deletar pasta de tracking:", error);
-      throw error;
-    }
-  },
+  recordClick: async (shortCode, data) => (await api.post(`/l/${shortCode}/click`, data)).data,
   
-  listLinks: async (folderId) => {
+  getLinkStats: async (linkId) => {
     try {
-      const response = await api.get(`/api/admin/tracking/links/${folderId}`);
-      return response.data;
+      return (await api.get(`/api/admin/tracking/links/${linkId}/stats`)).data;
     } catch (error) {
-      console.error("Erro ao listar links de tracking:", error);
-      throw error;
-    }
-  },
-  
-  createLink: async (data) => {
-    try {
-      const response = await api.post('/api/admin/tracking/links', data);
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao criar link de tracking:", error);
-      throw error;
-    }
-  },
-  
-  deleteLink: async (linkId) => {
-    try {
-      const response = await api.delete(`/api/admin/tracking/links/${linkId}`);
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao deletar link de tracking:", error);
-      throw error;
+      return { total_clicks: 0, unique_clicks: 0, clicks_by_date: [], clicks_by_country: [], clicks_by_device: [] };
     }
   }
 };
@@ -416,7 +362,7 @@ export const miniappService = {
 };
 
 // ============================================================
-// 🔐 SERVIÇO DE AUTENTICAÇÃO
+// 🔐 SERVIÇO DE AUTENTICAÇÃO (✅ CORRIGIDO)
 // ============================================================
 export const authService = {
   register: async (username, email, password, fullName) => {
@@ -429,10 +375,12 @@ export const authService = {
     return response.data;
   },
   
-  login: async (username, password) => {
+  // ✅ CORRIGIDO: Agora aceita turnstileToken
+  login: async (username, password, turnstileToken) => {
     const response = await api.post('/api/auth/login', {
       username,
-      password
+      password,
+      turnstile_token: turnstileToken  // ✅ Adicionado
     });
     return response.data;
   },
