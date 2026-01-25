@@ -116,19 +116,16 @@ export function Bots() {
               <CardContent>
                 
                 <div className="bot-header-row">
-                    <div className="bot-identity">
-                        <div className="bot-icon">
-                            <Send size={24} />
-                        </div>
-                        <div className="bot-info">
-                            <h3>{bot.nome}</h3>
-                            <p style={{color:'#888', fontSize:'0.9rem'}}>
-                                {bot.username 
-                                  ? (bot.username.toString().startsWith('@') ? bot.username : `@${bot.username}`) 
-                                  : '...'}
-                            </p>
-                        </div>
-                    </div>
+                  <div className="bot-identity">
+                  <div className="bot-icon">
+                    <span role="img" aria-label="bot">🤖</span>
+                  </div>
+                  <div>
+                    <h3>{bot.nome}</h3>
+                    {/* 👇 ADICIONE ESTA LINHA 👇 */}
+                    <span className="bot-username">@{bot.username || 'sem_user'}</span>
+                  </div>
+                </div>
                     
                     <div style={{position: 'relative'}} onClick={(e) => e.stopPropagation()}>
                         <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}>
