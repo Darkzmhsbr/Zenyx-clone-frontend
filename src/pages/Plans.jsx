@@ -15,14 +15,14 @@ export function Plans() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Estado para criaÃ§Ã£o
+  // Estado para criação
   const [newPlan, setNewPlan] = useState({ 
     nome_exibicao: '', 
-    preco_atual: '', // Corrigido nome do campo
+    preco_atual: '', 
     dias_duracao: '' 
   });
 
-  // Estado para ediÃ§Ã£o (Modal)
+  // Estado para edição (Modal)
   const [editingPlan, setEditingPlan] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -41,156 +41,180 @@ export function Plans() {
       setPlans(lista);
     } catch (error) {
       console.error(error);
-      Swal.fire('Erro', 'Falha ao carregar planos', 'error');
+      Swal.fire({
+        title: 'Erro!',
+        text: 'Não foi possível carregar os planos.',
+        icon: 'error',
+        background: '#151515',
+        color: '#fff'
+      });
     }
   };
 
-  // ðŸ”¥ CORREÃ‡ÃƒO 1: Enviar selectedBot.id, nÃ£o o objeto selectedBot
   const handleCreate = async () => {
     if (!newPlan.nome_exibicao || !newPlan.preco_atual || !newPlan.dias_duracao) {
-      return Swal.fire('AtenÃ§Ã£o', 'Preencha todos os campos', 'warning');
+      return Swal.fire('Atenção', 'Preencha todos os campos.', 'warning');
     }
 
     try {
       setLoading(true);
-      await planService.createPlan(selectedBot.id, {
+      await planService.createPlan({
         ...newPlan,
-        preco_atual: parseFloat(newPlan.preco_atual),
-        dias_duracao: parseInt(newPlan.dias_duracao)
+        bot_id: selectedBot.id
       });
       
-      Swal.fire('Sucesso', 'Plano criado!', 'success');
       setNewPlan({ nome_exibicao: '', preco_atual: '', dias_duracao: '' });
       carregarPlanos();
+      
+      Swal.fire({
+        title: 'Sucesso!',
+        text: 'Plano criado com sucesso.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#151515',
+        color: '#fff'
+      });
     } catch (error) {
-      Swal.fire('Erro', 'NÃ£o foi possÃ­vel criar o plano', 'error');
+      Swal.fire('Erro', 'Falha ao criar plano.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const openEditModal = (plan) => {
+  const handleEdit = (plan) => {
     setEditingPlan({ ...plan });
     setIsEditModalOpen(true);
   };
 
-  // ðŸ”¥ CORREÃ‡ÃƒO 2: Enviar 3 argumentos: (BotID, PlanoID, Dados)
   const handleUpdate = async () => {
-    if (!editingPlan) return;
     try {
-      await planService.updatePlan(
-          selectedBot.id,      // Argumento 1: ID do Bot
-          editingPlan.id,      // Argumento 2: ID do Plano
-          {                    // Argumento 3: Dados
-            nome_exibicao: editingPlan.nome_exibicao,
-            preco_atual: parseFloat(editingPlan.preco_atual),
-            dias_duracao: parseInt(editingPlan.dias_duracao),
-            descricao: editingPlan.descricao || ""
-          }
-      );
-      
-      Swal.fire('Atualizado', 'Plano editado com sucesso', 'success');
+      await planService.updatePlan(editingPlan.id, editingPlan);
       setIsEditModalOpen(false);
-      setEditingPlan(null);
       carregarPlanos();
+      Swal.fire({
+        title: 'Atualizado!',
+        text: 'Plano atualizado com sucesso.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        background: '#151515',
+        color: '#fff'
+      });
     } catch (error) {
-      console.error(error);
-      Swal.fire('Erro', 'Falha ao atualizar plano', 'error');
+      Swal.fire('Erro', 'Falha ao atualizar plano.', 'error');
     }
   };
 
-  // ðŸ”¥ CORREÃ‡ÃƒO 3: Enviar BotID e PlanoID
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: 'Tem certeza?',
-      text: "Isso apagarÃ¡ o plano permanentemente.",
+      text: "Este plano será removido permanentemente!",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
-      confirmButtonText: 'Sim, deletar'
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sim, deletar!',
+      cancelButtonText: 'Cancelar',
+      background: '#151515',
+      color: '#fff'
     });
 
     if (result.isConfirmed) {
       try {
-        await planService.deletePlan(selectedBot.id, id);
-        Swal.fire('Deletado!', 'O plano foi removido.', 'success');
+        await planService.deletePlan(id);
         carregarPlanos();
+        Swal.fire({
+          title: 'Deletado!',
+          icon: 'success',
+          background: '#151515',
+          color: '#fff'
+        });
       } catch (error) {
-        Swal.fire('Erro', 'Erro ao deletar plano', 'error');
+        Swal.fire('Erro', 'Não foi possível deletar o plano.', 'error');
       }
     }
   };
 
   return (
     <div className="plans-container">
-      <div className="header-actions">
-        <h1>Gerenciar Planos</h1>
-      </div>
-
       {selectedBot ? (
         <>
-          {/* CARD DE CRIAÃ‡ÃƒO */}
+          <div className="page-header">
+            <h1>Planos de Acesso: <span className="highlight-text">{selectedBot.nome}</span></h1>
+            <p className="page-subtitle">Gerencie os valores e durações dos acessos ao seu canal VIP.</p>
+          </div>
+
+          {/* CARD DE CRIAÇÃO */}
           <Card className="create-plan-card">
             <CardContent>
-              <h3>Novo Plano</h3>
-              <div className="form-row">
+              <div className="card-header-title">
+                <Plus size={20} />
+                <span>Criar Novo Plano</span>
+              </div>
+              
+              <div className="create-plan-form">
                 <Input 
-                  placeholder="Nome (Ex: Mensal)" 
+                  placeholder="Nome do Plano (Ex: Plano Mensal)" 
                   value={newPlan.nome_exibicao}
                   onChange={e => setNewPlan({...newPlan, nome_exibicao: e.target.value})}
-                  icon={<Tag size={18}/>}
+                  icon={<Tag size={16}/>}
                 />
                 <Input 
-                  placeholder="PreÃ§o (10.00)" type="number"
+                  placeholder="Preço (Ex: 49.90)" type="number"
                   value={newPlan.preco_atual}
                   onChange={e => setNewPlan({...newPlan, preco_atual: e.target.value})}
-                  icon={<DollarSign size={18}/>}
+                  icon={<DollarSign size={16}/>}
                 />
                 <Input 
-                  placeholder="DuraÃ§Ã£o (dias)" type="number"
+                  placeholder="Duração (Dias)" type="number"
                   value={newPlan.dias_duracao}
                   onChange={e => setNewPlan({...newPlan, dias_duracao: e.target.value})}
-                  icon={<Calendar size={18}/>}
+                  icon={<Calendar size={16}/>}
                 />
-                <Button onClick={handleCreate} disabled={loading}>
-                  <Plus size={20} /> Criar
-                </Button>
+                <div className="form-action-btn">
+                  <Button onClick={handleCreate} disabled={loading}>
+                    <Plus size={18} style={{marginRight: 8}}/> {loading ? 'Criando...' : 'Adicionar'}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* LISTA DE PLANOS */}
           <div className="plans-grid">
             {plans.map(plan => (
-              <Card key={plan.id} className="plan-card">
+              <Card key={plan.id} className="plan-item-card">
                 <CardContent>
-                  <div className="plan-header">
-                    <h4>{plan.nome_exibicao}</h4>
-                    <div className="plan-actions">
-                      <button className="btn-icon edit" onClick={() => openEditModal(plan)}>
-                        <Edit2 size={18} />
-                      </button>
-                      <button className="btn-icon delete" onClick={() => handleDelete(plan.id)}>
-                        <Trash2 size={18} />
-                      </button>
+                  <div className="plan-info-main">
+                    <h3>{plan.nome_exibicao}</h3>
+                    <div className="plan-price">R$ {parseFloat(plan.preco_atual).toFixed(2)}</div>
+                    <div className="plan-duration">
+                      <Calendar size={14} /> {plan.dias_duracao} dias de acesso
                     </div>
                   </div>
-                  <div className="plan-details">
-                    <p><strong>R$ {parseFloat(plan.preco_atual).toFixed(2)}</strong></p>
-                    <p>{plan.dias_duracao} dias de acesso</p>
+                  
+                  <div className="plan-actions">
+                    <button className="action-btn edit" onClick={() => handleEdit(plan)}>
+                      <Edit2 size={18} />
+                    </button>
+                    <button className="action-btn delete" onClick={() => handleDelete(plan.id)}>
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          {/* MODAL DE EDIÃ‡ÃƒO */}
-          {isEditModalOpen && editingPlan && (
+          {/* MODAL DE EDIÇÃO */}
+          {isEditModalOpen && (
             <div className="modal-overlay">
               <div className="modal-content">
                 <div className="modal-header">
                   <h3>Editar Plano</h3>
-                  <button onClick={() => setIsEditModalOpen(false)}><X size={20}/></button>
+                  <button className="close-btn" onClick={() => setIsEditModalOpen(false)}>
+                    <X size={20} />
+                  </button>
                 </div>
                 
                 <div className="modal-body">
@@ -201,13 +225,13 @@ export function Plans() {
                   />
                   <div className="modal-row">
                      <Input 
-                      label="PreÃ§o (R$)" type="number"
+                      label="Preço (R$)" type="number"
                       value={editingPlan.preco_atual}
                       onChange={e => setEditingPlan({...editingPlan, preco_atual: e.target.value})}
                       icon={<DollarSign size={16}/>}
                     />
                     <Input 
-                      label="DuraÃ§Ã£o (Dias)" type="number"
+                      label="Duração (Dias)" type="number"
                       value={editingPlan.dias_duracao}
                       onChange={e => setEditingPlan({...editingPlan, dias_duracao: e.target.value})}
                       icon={<Calendar size={16}/>}
@@ -218,7 +242,7 @@ export function Plans() {
                 <div className="modal-footer">
                   <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
                   <Button onClick={handleUpdate}>
-                    <Check size={18} style={{marginRight: 8}}/> Salvar AlteraÃ§Ãµes
+                    <Check size={18} style={{marginRight: 8}}/> Salvar Alterações
                   </Button>
                 </div>
               </div>
@@ -228,7 +252,7 @@ export function Plans() {
         </>
       ) : (
         <div className="empty-state">
-            <h2>ðŸ‘ˆ Selecione um bot no menu lateral para gerenciar os planos.</h2>
+            <h2>👈 Selecione um bot no menu lateral para gerenciar os planos.</h2>
         </div>
       )}
     </div>
