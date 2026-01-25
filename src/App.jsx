@@ -148,6 +148,7 @@ function App() {
               
               {/* 🔥 ROTA DE TUTORIAIS ATUALIZADA - AGORA APONTANDO PARA O COMPONENTE REAL */}
               <Route path="/tutorial" element={<Tutorial />} />
+              <Route path="/tutoriais" element={<Tutorial />} />
               
               <Route path="/funcoes" element={<PlaceholderPage title="FunÃ§Ãµes Extras" />} />
               <Route path="/funcoes/admins" element={<AdminManager />} />

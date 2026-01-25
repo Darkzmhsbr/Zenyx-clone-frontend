@@ -52,7 +52,7 @@ export function Sidebar({ isOpen, onClose }) {
     window.location.href = '/login';
   };
 
-  // Função auxiliar para verificar se o link está ativo
+  // Função auxiliar para verificar se le link está ativo
   const isActive = (path) => {
     return currentPath === path ? 'active' : '';
   };
@@ -232,7 +232,8 @@ export function Sidebar({ isOpen, onClose }) {
 
             {hasBot && isExtrasMenuOpen && (
               <div className="nav-subitems">
-                <Link to="/tutoriais" className={`nav-item ${isActive('/tutoriais')}`} onClick={onClose}>
+                {/* 🔥 ATUALIZAÇÃO: Rota sincronizada com App.jsx */}
+                <Link to="/tutorial" className={`nav-item ${isActive('/tutorial')}`} onClick={onClose}>
                   <BookOpen size={18} /> <span>Tutoriais</span>
                 </Link>
 
