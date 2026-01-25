@@ -35,8 +35,8 @@ export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Adicionado 'user' para verificar permissão
-  const { user, logout } = useAuth();
+  // Adicionado 'user' para verificar permissão e 'hasBot' para trava
+  const { user, logout, hasBot } = useAuth();
   
   const currentPath = location.pathname;
   
@@ -110,18 +110,33 @@ export function Sidebar({ isOpen, onClose }) {
           )}
 
           {/* MENU GERAL */}
-          {/* 🛠️ CORREÇÃO: Sincronizado com a rota /dashboard */}
-          <Link to="/dashboard" className={`nav-item ${isActive('/dashboard')}`} onClick={onClose}>
+          {/* 🛠️ CORREÇÃO: Sincronizado com a rota /dashboard + Trava Onboarding */}
+          <Link 
+            to={hasBot ? "/dashboard" : "#"} 
+            className={`nav-item ${isActive('/dashboard')} ${!hasBot ? 'locked-nav' : ''}`} 
+            onClick={(e) => !hasBot ? e.preventDefault() : onClose()}
+            style={!hasBot ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          >
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </Link>
 
-          <Link to="/funil" className={`nav-item ${isActive('/funil')}`} onClick={onClose}>
+          <Link 
+            to={hasBot ? "/funil" : "#"} 
+            className={`nav-item ${isActive('/funil')} ${!hasBot ? 'locked-nav' : ''}`} 
+            onClick={(e) => !hasBot ? e.preventDefault() : onClose()}
+            style={!hasBot ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          >
             <TrendingUp size={20} />
             <span>Funil de Vendas</span>
           </Link>
 
-          <Link to="/contatos" className={`nav-item ${isActive('/contatos')}`} onClick={onClose}>
+          <Link 
+            to={hasBot ? "/contatos" : "#"} 
+            className={`nav-item ${isActive('/contatos')} ${!hasBot ? 'locked-nav' : ''}`} 
+            onClick={(e) => !hasBot ? e.preventDefault() : onClose()}
+            style={!hasBot ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          >
             <Users size={20} />
             <span>Contatos (Leads)</span>
           </Link>
@@ -141,10 +156,15 @@ export function Sidebar({ isOpen, onClose }) {
             
             {isBotMenuOpen && (
               <div className="nav-subitems">
-                <Link to="/bots" className={`nav-item ${isActive('/bots')}`} onClick={onClose}>
+                <Link 
+                  to={hasBot ? "/bots" : "#"} 
+                  className={`nav-item ${isActive('/bots')} ${!hasBot ? 'locked-nav' : ''}`} 
+                  onClick={(e) => !hasBot ? e.preventDefault() : onClose()}
+                  style={!hasBot ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                >
                   <Zap size={18} /> <span>Gerenciar Bots</span>
                 </Link>
-                {/* ✅ ROTA CORRETA: /bots/new */}
+                {/* ✅ ROTA CORRETA: /bots/new (Sempre liberada para o Onboarding) */}
                 <Link to="/bots/new" className={`nav-item ${isActive('/bots/new')}`} onClick={onClose}>
                   <PlusCircle size={18} /> <span>Novo Bot</span>
                 </Link>
@@ -152,21 +172,31 @@ export function Sidebar({ isOpen, onClose }) {
             )}
           </div>
 
-          <Link to="/flow" className={`nav-item ${isActive('/flow')}`} onClick={onClose}>
+          <Link 
+            to={hasBot ? "/flow" : "#"} 
+            className={`nav-item ${isActive('/flow')} ${!hasBot ? 'locked-nav' : ''}`} 
+            onClick={(e) => !hasBot ? e.preventDefault() : onClose()}
+            style={!hasBot ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          >
             <Layers size={20} />
             <span>Flow Chat (Fluxo)</span>
           </Link>
 
-          <Link to="/remarketing" className={`nav-item ${isActive('/remarketing')}`} onClick={onClose}>
+          <Link 
+            to={hasBot ? "/remarketing" : "#"} 
+            className={`nav-item ${isActive('/remarketing')} ${!hasBot ? 'locked-nav' : ''}`} 
+            onClick={(e) => !hasBot ? e.preventDefault() : onClose()}
+            style={!hasBot ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          >
             <Megaphone size={20} />
             <span>Remarketing</span>
           </Link>
 
           {/* SUBMENU: PLANOS E OFERTAS */}
-          <div className="nav-group">
+          <div className="nav-group" style={!hasBot ? { opacity: 0.5 } : {}}>
             <div 
               className={`nav-item-header ${isOffersMenuOpen ? 'open' : ''}`} 
-              onClick={() => setIsOffersMenuOpen(!isOffersMenuOpen)}
+              onClick={() => hasBot && setIsOffersMenuOpen(!isOffersMenuOpen)}
             >
               <div className="nav-item-header-content">
                 <CreditCard size={20} />
@@ -175,7 +205,7 @@ export function Sidebar({ isOpen, onClose }) {
               {isOffersMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
 
-            {isOffersMenuOpen && (
+            {hasBot && isOffersMenuOpen && (
               <div className="nav-subitems">
                 <Link to="/planos" className={`nav-item ${isActive('/planos')}`} onClick={onClose}>
                   <Star size={18} /> <span>Planos de Acesso</span>
@@ -188,10 +218,10 @@ export function Sidebar({ isOpen, onClose }) {
           </div>
 
           {/* SUBMENU: EXTRAS */}
-          <div className="nav-group">
+          <div className="nav-group" style={!hasBot ? { opacity: 0.5 } : {}}>
             <div 
               className={`nav-item-header ${isExtrasMenuOpen ? 'open' : ''}`} 
-              onClick={() => setIsExtrasMenuOpen(!isExtrasMenuOpen)}
+              onClick={() => hasBot && setIsExtrasMenuOpen(!isExtrasMenuOpen)}
             >
               <div className="nav-item-header-content">
                 <BookOpen size={20} />
@@ -200,7 +230,7 @@ export function Sidebar({ isOpen, onClose }) {
               {isExtrasMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
 
-            {isExtrasMenuOpen && (
+            {hasBot && isExtrasMenuOpen && (
               <div className="nav-subitems">
                 <Link to="/tutoriais" className={`nav-item ${isActive('/tutoriais')}`} onClick={onClose}>
                   <BookOpen size={18} /> <span>Tutoriais</span>
@@ -229,7 +259,12 @@ export function Sidebar({ isOpen, onClose }) {
           <div className="divider"></div>
 
           {/* ✅ CORREÇÃO: Texto "Integrações" corrigido de encoding */}
-          <Link to="/integracoes" className={`nav-item ${isActive('/integracoes')}`} onClick={onClose}>
+          <Link 
+            to={hasBot ? "/integracoes" : "#"} 
+            className={`nav-item ${isActive('/integracoes')} ${!hasBot ? 'locked-nav' : ''}`} 
+            onClick={(e) => !hasBot ? e.preventDefault() : onClose()}
+            style={!hasBot ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          >
             <Settings size={20} />
             <span>Integrações</span>
           </Link>

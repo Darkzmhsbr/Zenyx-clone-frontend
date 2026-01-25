@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, Mail, UserPlus, ArrowRight } from 'lucide-react';
 import { Button } from '../components/Button';
-import { authService } from '../services/api';
-import { useAuth } from '../context/AuthContext'; // Importamos para usar a função login do contexto
+import { authService } from '../services/api'; 
 import Swal from 'sweetalert2';
 import './Login.css';
 
@@ -15,10 +14,9 @@ export function Register() {
     confirmPassword: '',
     fullName: ''
   });
-  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState(''); // Estado para o token
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Usamos o login do contexto para configurar o estado global
   const turnstileRef = useRef(null);
 
   // 🛡️ Carrega o Script do Turnstile e Renderiza o Widget
@@ -28,8 +26,7 @@ export function Register() {
     const renderWidget = () => {
       if (window.turnstile && turnstileRef.current) {
         window.turnstile.render(turnstileRef.current, {
-          sitekey: '0x4AAAAAACOaNAV9wTIXZkZy',
-          theme: 'dark',
+          sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SUA SITE KEY
           callback: (token) => {
             setTurnstileToken(token);
           },
@@ -63,6 +60,19 @@ export function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     
+    // Validações
+    if (!formData.username || !formData.email || !formData.password) {
+      Swal.fire({
+        title: 'Campos Obrigatórios',
+        text: 'Por favor, preencha todos os campos obrigatórios.',
+        icon: 'warning',
+        background: '#1b1730',
+        color: '#fff',
+        confirmButtonColor: '#c333ff'
+      });
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       Swal.fire({
         title: 'Senhas Não Coincidem',
@@ -75,10 +85,23 @@ export function Register() {
       return;
     }
 
+    if (formData.password.length < 6) {
+      Swal.fire({
+        title: 'Senha Fraca',
+        text: 'A senha deve ter pelo menos 6 caracteres.',
+        icon: 'warning',
+        background: '#1b1730',
+        color: '#fff',
+        confirmButtonColor: '#c333ff'
+      });
+      return;
+    }
+
+    // 🛡️ Validação do Turnstile
     if (!turnstileToken) {
       Swal.fire({
         title: 'Verificação Necessária',
-        text: 'Por favor, complete a verificação de segurança.',
+        text: 'Por favor, confirme que você é humano clicando na caixa de verificação.',
         icon: 'warning',
         background: '#1b1730',
         color: '#fff',
@@ -90,33 +113,41 @@ export function Register() {
     setLoading(true);
 
     try {
-      // 1. REGISTRO: Enviamos os campos exatamente como o UserCreate do main.py espera
-      // Note o uso de full_name (com underline) para casar com o Pydantic do Backend
-      await authService.register(
+      // Chamada para o backend
+      const response = await authService.register(
         formData.username,
         formData.email,
         formData.password,
-        formData.fullName || formData.username, // full_name
-        turnstileToken
+        formData.fullName || formData.username,
+        turnstileToken // Enviando o token
       );
 
-      // 2. LOGIN AUTOMÁTICO: Chamamos a função login do context para setar token e user
-      await login(formData.username, formData.password, turnstileToken);
+      console.log("✅ Cadastro realizado:", response);
 
-      // 3. SUCESSO E REDIRECIONAMENTO
+      // Salva o token automaticamente após registro
+      localStorage.setItem('zenyx_token', response.access_token);
+      
+      const userData = {
+        id: response.user_id,
+        username: response.username,
+        name: response.username,
+        role: 'admin'
+      };
+      
+      localStorage.setItem('zenyx_admin_user', JSON.stringify(userData));
+
       Swal.fire({
         title: 'Cadastro Realizado!',
-        text: 'Sua conta foi criada com sucesso. Bem-vindo(a)!',
+        text: 'Sua conta foi criada com sucesso. Vamos configurar seu primeiro bot!',
         icon: 'success',
         background: '#1b1730',
         color: '#fff',
         confirmButtonColor: '#c333ff',
         timer: 2000,
-        showConfirmButton: false,
         timerProgressBar: true
       }).then(() => {
-        // 🚀 REDIRECIONAMENTO PARA O DASHBOARD
-        navigate('/dashboard');
+        // 🚀 DIRECIONA PARA O PASSO OBRIGATÓRIO (Criar Bot)
+        navigate('/bots/new');
       });
 
     } catch (error) {
@@ -124,10 +155,10 @@ export function Register() {
       
       let errorMessage = 'Erro ao criar conta. Tente novamente.';
       
-      // Tratamento para exibir erros de validação do Backend de forma legível
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-        errorMessage = typeof detail === 'string' ? detail : "Erro de validação nos dados.";
+      if (error.response?.status === 400) {
+        errorMessage = error.response.data.detail || 'Usuário ou email já cadastrado.';
+      } else if (!error.response) {
+        errorMessage = 'Erro de conexão. Verifique sua internet.';
       }
 
       Swal.fire({
@@ -139,6 +170,7 @@ export function Register() {
         confirmButtonColor: '#c333ff'
       });
 
+      // Reseta o Turnstile
       if (window.turnstile) window.turnstile.reset();
       setTurnstileToken('');
 
@@ -215,8 +247,10 @@ export function Register() {
             />
           </div>
 
+          {/* 🛡️ WIDGET CLOUDFLARE TURNSTILE */}
           <div 
             ref={turnstileRef} 
+            className="turnstile-container" 
             style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}
           ></div>
 
