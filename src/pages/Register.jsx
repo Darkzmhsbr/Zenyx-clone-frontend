@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, Mail, UserPlus, ArrowRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { authService } from '../services/api'; 
+import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
 import './Login.css';
 
@@ -17,6 +18,7 @@ export function Register() {
   const [turnstileToken, setTurnstileToken] = useState(''); // Estado para o token
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
   const turnstileRef = useRef(null);
 
   // 🛡️ Carrega o Script do Turnstile e Renderiza o Widget
@@ -113,32 +115,24 @@ export function Register() {
     setLoading(true);
 
     try {
-      // Chamada para o backend
-      const response = await authService.register(
+      // 1. Cria a conta no Backend
+      await authService.register(
         formData.username,
         formData.email,
         formData.password,
         formData.fullName || formData.username,
-        turnstileToken // Enviando o token
+        turnstileToken 
       );
 
-      console.log("✅ Cadastro realizado:", response);
+      // 🔥 2. IMPORTANTE: Chame o login do contexto para setar o estado global
+      // Isso evita que o sistema redirecione o usuário para o login novamente
+      await login(formData.username, formData.password, turnstileToken);
 
-      // Salva o token automaticamente após registro
-      localStorage.setItem('zenyx_token', response.access_token);
-      
-      const userData = {
-        id: response.user_id,
-        username: response.username,
-        name: response.username,
-        role: 'admin'
-      };
-      
-      localStorage.setItem('zenyx_admin_user', JSON.stringify(userData));
+      console.log("✅ Cadastro e Login realizados com sucesso");
 
       Swal.fire({
         title: 'Cadastro Realizado!',
-        text: 'Sua conta foi criada com sucesso. Vamos configurar seu primeiro bot!',
+        text: 'Sua conta foi criada com sucesso. Redirecionando para o setup...',
         icon: 'success',
         background: '#1b1730',
         color: '#fff',
@@ -146,8 +140,8 @@ export function Register() {
         timer: 2000,
         timerProgressBar: true
       }).then(() => {
-        // 🚀 DIRECIONA PARA O PASSO OBRIGATÓRIO (Criar Bot)
-        navigate('/bots/new');
+        // 🚀 Redireciona para o passo obrigatório
+        navigate('/bots/new'); 
       });
 
     } catch (error) {
