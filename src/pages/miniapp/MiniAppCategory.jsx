@@ -61,7 +61,9 @@ export function MiniAppCategory() {
                                 {category.model_name}
                             </h2>
                             <p style={{ color: category.model_desc_color || '#cccccc' }}>
-                                {category.model_desc || category.description}
+                            whiteSpace: 'pre-wrap' //
+                            </p>
+                            <p style={{ color: category.model_desc_color || '#cccccc', whiteSpace: 'pre-wrap' }}>                                {category.model_desc || category.description}
                             </p>
                         </div>
                     </div>
