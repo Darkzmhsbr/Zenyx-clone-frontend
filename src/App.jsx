@@ -25,6 +25,7 @@ import { Tracking } from './pages/Tracking';
 import { AuditLogs } from './pages/AuditLogs'; // FASE 3.3
 import { SuperAdmin } from './pages/SuperAdmin'; // ðŸ†• FASE 3.4
 import { SuperAdminUsers } from './pages/SuperAdminUsers'; // ðŸ†• FASE 3.4
+import { Tutorial } from './pages/Tutorial'; // 🔥 IMPORTAÇÃO DA NOVA PÁGINA
 
 // ðŸ”¥ IMPORTANDO A LOJA REAL
 import { MiniAppHome } from './pages/miniapp/MiniAppHome';
@@ -144,7 +145,9 @@ function App() {
               <Route path="/superadmin/users" element={<SuperAdminUsers />} />
               
               <Route path="/config" element={<PlaceholderPage title="ConfiguraÃ§Ãµes Gerais" />} />
-              <Route path="/tutorial" element={<PlaceholderPage title="Tutoriais" />} />
+              
+              {/* 🔥 ROTA DE TUTORIAIS ATUALIZADA - AGORA APONTANDO PARA O COMPONENTE REAL */}
+              <Route path="/tutorial" element={<Tutorial />} />
               
               <Route path="/funcoes" element={<PlaceholderPage title="FunÃ§Ãµes Extras" />} />
               <Route path="/funcoes/admins" element={<AdminManager />} />

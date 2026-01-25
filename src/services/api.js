@@ -405,6 +405,22 @@ export const mediaService = {
 };
 
 // ============================================================
+// 📚 SERVIÇO DE TUTORIAIS (NOVO)
+// ============================================================
+export const tutorialService = {
+  getTutorials: async () => {
+    try {
+      const response = await api.get('/api/admin/tutorials');
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar tutoriais do backend:", error);
+      // Retorno de fallback caso o backend falhe
+      return [];
+    }
+  }
+};
+
+// ============================================================
 // 💳 SERVIÇO DE PAGAMENTO
 // ============================================================
 export const paymentService = {
