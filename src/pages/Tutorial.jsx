@@ -13,7 +13,9 @@ import {
   HelpCircle,
   Zap
 } from 'lucide-react';
-import './LandingPage.css'; // Importando os estilos de animação e cores premium
+
+// ✅ CORREÇÃO DO CAMINHO: Saindo de pages e entrando em styles
+import '../styles/LandingPage.css'; 
 
 export function Tutorial() {
   const [openIndex, setOpenIndex] = useState(null);
@@ -91,11 +93,11 @@ export function Tutorial() {
             </span>
           </h2>
           <p className="section-subtitle" style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '600px', margin: '0 auto' }}>
-            Siga as orientações abaixo para ativar sua operação automática em poucos minutos.
+            Aprenda a configurar sua operação profissional em poucos minutos seguindo nosso guia.
           </p>
         </div>
 
-        {/* Lista de Tutoriais (Estilo TutorialsSection) */}
+        {/* Lista de Tutoriais */}
         <div className="tutorials-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {steps.map((tutorial, index) => (
             <div 
@@ -118,8 +120,7 @@ export function Tutorial() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '20px',
-                  cursor: 'pointer',
-                  transition: 'background 0.3s ease'
+                  cursor: 'pointer'
                 }}
               >
                 <div className="tutorial-icon" style={{
@@ -139,8 +140,7 @@ export function Tutorial() {
                   flex: 1,
                   fontSize: '1.1rem',
                   fontWeight: '600',
-                  color: openIndex === index ? '#c333ff' : '#fff',
-                  transition: 'color 0.3s ease'
+                  color: openIndex === index ? '#c333ff' : '#fff'
                 }}>
                   {tutorial.title}
                 </h3>
@@ -149,22 +149,21 @@ export function Tutorial() {
                   style={{
                     color: openIndex === index ? '#c333ff' : 'rgba(255,255,255,0.4)',
                     transform: openIndex === index ? 'rotate(180deg)' : 'rotate(0)',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transition: 'all 0.4s ease'
                   }}
                 />
               </div>
               
               <div 
-                className={`tutorial-content ${openIndex === index ? 'active' : ''}`}
                 style={{
-                  maxHeight: openIndex === index ? '300px' : '0',
+                  maxHeight: openIndex === index ? '400px' : '0',
                   opacity: openIndex === index ? '1' : '0',
                   overflow: 'hidden',
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   background: 'rgba(0,0,0,0.2)'
                 }}
               >
-                <div className="tutorial-content-inner" style={{ padding: '0 24px 24px 92px', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                <div style={{ padding: '0 24px 24px 92px', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', lineHeight: '1.6' }}>
                   {tutorial.content}
                 </div>
               </div>
@@ -172,13 +171,13 @@ export function Tutorial() {
           ))}
         </div>
 
-        {/* Footer de Ajuda */}
-        <div className={`animate-fade-in-up`} style={{ animationDelay: '1s', marginTop: '60px', textAlign: 'center' }}>
-          <div style={{ padding: '30px', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(195, 51, 255, 0.05) 0%, rgba(56, 189, 248, 0.05) 100%)', border: '1px solid rgba(195, 51, 255, 0.1)' }}>
-            <HelpCircle size={40} style={{ color: '#c333ff', marginBottom: '15px', margin: '0 auto 15px' }} />
+        {/* Footer */}
+        <div style={{ marginTop: '60px', textAlign: 'center' }}>
+          <div style={{ padding: '30px', borderRadius: '24px', background: 'rgba(195, 51, 255, 0.05)', border: '1px solid rgba(195, 51, 255, 0.1)' }}>
+            <HelpCircle size={40} style={{ color: '#c333ff', margin: '0 auto 15px' }} />
             <h4 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '8px' }}>Dúvidas Específicas?</h4>
             <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '20px' }}>Nosso suporte técnico está disponível para te ajudar em qualquer etapa.</p>
-            <button className="btn-primary" style={{ padding: '12px 30px', borderRadius: '12px', background: '#c333ff', color: '#fff', border: 'none', fontWeight: '600', cursor: 'pointer', boxShadow: '0 10px 20px rgba(195, 51, 255, 0.2)' }}>
+            <button style={{ padding: '12px 30px', borderRadius: '12px', background: '#c333ff', color: '#fff', border: 'none', fontWeight: '600', cursor: 'pointer' }}>
               Falar com Especialista
             </button>
           </div>
