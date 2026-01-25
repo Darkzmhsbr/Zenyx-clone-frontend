@@ -22,17 +22,21 @@ import {
   ShoppingBag,
   User, 
   Target,
-  Crown,
-  Lock // 🔥 NOVO: Ícone de bloqueio
+  Crown // ðŸ‘‘ Ãcone do Super Admin
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
+
+// -------------------------------------------------------
+// ARQUIVO CORRIGIDO: ROTA DO DASHBOARD AJUSTADA PARA /dashboard
+// -------------------------------------------------------
 
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const { user, logout, onboarding } = useAuth(); // 🔥 NOVO: Importa onboarding
+  // Adicionado 'user' para verificar permissÃ£o
+  const { user, logout } = useAuth();
   
   const currentPath = location.pathname;
   
@@ -44,60 +48,13 @@ export function Sidebar({ isOpen, onClose }) {
   const handleLogout = () => {
     if (onClose) onClose();
     logout();
+    // ForÃ§a redirecionamento limpo
     window.location.href = '/login';
   };
 
-  // Função auxiliar para verificar se o link está ativo
+  // FunÃ§Ã£o auxiliar para verificar se o link estÃ¡ ativo
   const isActive = (path) => {
     return currentPath === path ? 'active' : '';
-  };
-
-  // 🔥 NOVO: Função para verificar se menu deve estar bloqueado
-  const isLocked = (requiredStep) => {
-    if (!onboarding || onboarding.completed) return false; // Se completou, libera tudo
-    
-    // Define ordem das etapas
-    const stepOrder = {
-      'botCreated': 1,
-      'botConfigured': 2,
-      'plansCreated': 3,
-      'flowConfigured': 4
-    };
-    
-    const requiredStepNum = stepOrder[requiredStep];
-    const currentStepNum = onboarding.currentStep;
-    
-    // Bloqueia se a etapa requerida é maior que a atual
-    return requiredStepNum > currentStepNum;
-  };
-
-  // 🔥 NOVO: Renderiza item de menu (com ou sem bloqueio)
-  const renderNavItem = (to, icon, label, requiredStep = null, onClick = null) => {
-    const locked = requiredStep ? isLocked(requiredStep) : false;
-    
-    if (locked) {
-      return (
-        <div className="nav-item locked" title={`Complete a etapa anterior primeiro`}>
-          {icon}
-          <span>{label}</span>
-          <Lock size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />
-        </div>
-      );
-    }
-    
-    return (
-      <Link 
-        to={to} 
-        className={`nav-item ${isActive(to)}`} 
-        onClick={() => {
-          if (onClick) onClick();
-          if (onClose) onClose();
-        }}
-      >
-        {icon}
-        <span>{label}</span>
-      </Link>
-    );
   };
 
   return (
@@ -110,7 +67,7 @@ export function Sidebar({ isOpen, onClose }) {
 
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          {/* Logo ou Título */}
+          {/* Logo ou TÃ­tulo */}
           <div className="logo-area" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ 
               width: '32px', 
@@ -135,11 +92,11 @@ export function Sidebar({ isOpen, onClose }) {
 
         <nav className="sidebar-nav">
           
-          {/* 🔥 ÁREA MESTRA (SUPER ADMIN) */}
+          {/* ðŸ”¥ ÃREA MESTRA (SUPER ADMIN) ðŸ”¥ */}
           {(user?.is_superuser || user?.username === 'AdminZenyx') && (
             <div className="admin-section">
               <div className="admin-section-title">
-                ÁREA MESTRA
+                ÃREA MESTRA
               </div>
               <Link 
                 to="/superadmin" 
@@ -152,14 +109,24 @@ export function Sidebar({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* 🔥 MENU GERAL - Dashboard sempre liberado */}
-          {renderNavItem('/dashboard', <LayoutDashboard size={20} />, 'Dashboard')}
+          {/* MENU GERAL */}
+          {/* ðŸ”§ CORREÃ‡ÃƒO AQUI: Mudado de "/" para "/dashboard" */}
+          <Link to="/dashboard" className={`nav-item ${isActive('/dashboard')}`} onClick={onClose}>
+            <LayoutDashboard size={20} />
+            <span>Dashboard</span>
+          </Link>
 
-          {/* 🔥 Bloqueados até completar Etapa 4 (flowConfigured) */}
-          {renderNavItem('/funil', <TrendingUp size={20} />, 'Funil de Vendas', 'flowConfigured')}
-          {renderNavItem('/contatos', <Users size={20} />, 'Contatos (Leads)', 'flowConfigured')}
+          <Link to="/funil" className={`nav-item ${isActive('/funil')}`} onClick={onClose}>
+            <TrendingUp size={20} />
+            <span>Funil de Vendas</span>
+          </Link>
 
-          {/* === GRUPO: MEUS BOTS === */}
+          <Link to="/contatos" className={`nav-item ${isActive('/contatos')}`} onClick={onClose}>
+            <Users size={20} />
+            <span>Contatos (Leads)</span>
+          </Link>
+
+         {/* === GRUPO: MEUS BOTS === */}
           <div className="nav-group">
             <div 
               className={`nav-item group-header ${isBotMenuOpen ? 'open' : ''}`}
@@ -174,20 +141,26 @@ export function Sidebar({ isOpen, onClose }) {
             
             {isBotMenuOpen && (
               <div className="nav-subitems">
-                {/* 🔥 Gerenciar Bots - Bloqueado até criar primeiro bot */}
-                {renderNavItem('/bots', <Zap size={18} />, 'Gerenciar Bots', 'botCreated')}
-                
-                {/* 🔥 Novo Bot - Sempre liberado (é o passo 1!) */}
-                {renderNavItem('/bots/new', <PlusCircle size={18} />, 'Novo Bot')}
+                <Link to="/bots" className={`nav-item ${isActive('/bots')}`} onClick={onClose}>
+                  <Zap size={18} /> <span>Gerenciar Bots</span>
+                </Link>
+                {/* âœ… ROTA CORRETA: /bots/new */}
+                <Link to="/bots/new" className={`nav-item ${isActive('/bots/new')}`} onClick={onClose}>
+                  <PlusCircle size={18} /> <span>Novo Bot</span>
+                </Link>
               </div>
             )}
           </div>
 
-          {/* 🔥 Flow - É o PASSO 4, só libera após criar planos */}
-          {renderNavItem('/flow', <Layers size={20} />, 'Flow Chat (Fluxo)', 'plansCreated')}
+          <Link to="/flow" className={`nav-item ${isActive('/flow')}`} onClick={onClose}>
+            <Layers size={20} />
+            <span>Flow Chat (Fluxo)</span>
+          </Link>
 
-          {/* 🔥 Remarketing - Bloqueado até finalizar onboarding */}
-          {renderNavItem('/remarketing', <Megaphone size={20} />, 'Remarketing', 'flowConfigured')}
+          <Link to="/remarketing" className={`nav-item ${isActive('/remarketing')}`} onClick={onClose}>
+            <Megaphone size={20} />
+            <span>Remarketing</span>
+          </Link>
 
           {/* SUBMENU: PLANOS E OFERTAS */}
           <div className="nav-group">
@@ -204,11 +177,12 @@ export function Sidebar({ isOpen, onClose }) {
 
             {isOffersMenuOpen && (
               <div className="nav-subitems">
-                {/* 🔥 Planos - É o PASSO 3, só libera após configurar bot */}
-                {renderNavItem('/planos', <Star size={18} />, 'Planos de Acesso', 'botConfigured')}
-                
-                {/* 🔥 Order Bump - Bloqueado até finalizar onboarding */}
-                {renderNavItem('/ofertas/order-bump', <ShoppingBag size={18} />, 'Order Bump', 'flowConfigured')}
+                <Link to="/planos" className={`nav-item ${isActive('/planos')}`} onClick={onClose}>
+                  <Star size={18} /> <span>Planos de Acesso</span>
+                </Link>
+                <Link to="/ofertas/order-bump" className={`nav-item ${isActive('/ofertas/order-bump')}`} onClick={onClose}>
+                  <ShoppingBag size={18} /> <span>Order Bump</span>
+                </Link>
               </div>
             )}
           </div>
@@ -228,21 +202,41 @@ export function Sidebar({ isOpen, onClose }) {
 
             {isExtrasMenuOpen && (
               <div className="nav-subitems">
-                {/* 🔥 Todos bloqueados até finalizar onboarding */}
-                {renderNavItem('/tutoriais', <BookOpen size={18} />, 'Tutoriais', 'flowConfigured')}
-                {renderNavItem('/funcoes/admins', <ShieldCheck size={18} />, 'Administradores', 'flowConfigured')}
-                {renderNavItem('/funcoes/grupos', <Layers size={18} />, 'Grupos e Canais', 'flowConfigured')}
-                {renderNavItem('/funcoes/free', <Unlock size={18} />, 'Canal Free', 'flowConfigured')}
-                {renderNavItem('/rastreamento', <Target size={18} />, 'Rastreamento', 'flowConfigured')}
+                <Link to="/tutoriais" className={`nav-item ${isActive('/tutoriais')}`} onClick={onClose}>
+                  <BookOpen size={18} /> <span>Tutoriais</span>
+                </Link>
+
+                <Link to="/funcoes/admins" className={`nav-item ${isActive('/funcoes/admins')}`} onClick={onClose}>
+                  <ShieldCheck size={18} /> <span>Administradores</span>
+                </Link>
+
+                <Link to="/funcoes/grupos" className={`nav-item ${isActive('/funcoes/grupos')}`} onClick={onClose}>
+                  <Layers size={18} /> <span>Grupos e Canais</span>
+                </Link>
+
+                <Link to="/funcoes/free" className={`nav-item ${isActive('/funcoes/free')}`} onClick={onClose}>
+                  <Unlock size={18} /> <span>Canal Free</span>
+                </Link>
+
+                {/* RASTREAMENTO DENTRO DE EXTRAS */}
+                <Link to="/rastreamento" className={`nav-item ${isActive('/rastreamento')}`} onClick={onClose}>
+                  <Target size={18} /> <span>Rastreamento</span>
+                </Link>
               </div>
             )}
           </div>
           
           <div className="divider"></div>
 
-          {/* 🔥 Integrações e Perfil - Bloqueados até finalizar */}
-          {renderNavItem('/integracoes', <Settings size={20} />, 'Integrações', 'flowConfigured')}
-          {renderNavItem('/perfil', <User size={20} />, 'Meu Perfil', 'flowConfigured')}
+          <Link to="/integracoes" className={`nav-item ${isActive('/integracoes')}`} onClick={onClose}>
+            <Settings size={20} />
+            <span>IntegraÃ§Ãµes</span>
+          </Link>
+
+          <Link to="/perfil" className={`nav-item ${isActive('/perfil')}`} onClick={onClose}>
+            <User size={20} />
+            <span>Meu Perfil</span>
+          </Link>
 
           <div className="nav-item logout-btn" onClick={handleLogout}>
             <LogOut size={20} />

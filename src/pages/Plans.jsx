@@ -4,29 +4,25 @@ import {
   Plus, Trash2, Calendar, DollarSign, Edit2, Check, X, Tag 
 } from 'lucide-react';
 import { planService } from '../services/api';
-import { useBot } from '../context/BotContext';
-import { useAuth } from '../context/AuthContext'; // 🔥 NOVO
-import { useNavigate } from 'react-router-dom'; // 🔥 NOVO
+import { useBot } from '../context/BotContext'; 
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
 import './Plans.css';
 
 export function Plans() {
-  const { selectedBot } = useBot();
-  const { updateOnboarding, onboarding } = useAuth(); // 🔥 NOVO
-  const navigate = useNavigate(); // 🔥 NOVO
+  const { selectedBot } = useBot(); 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Estado para criação
+  // Estado para criaÃ§Ã£o
   const [newPlan, setNewPlan] = useState({ 
     nome_exibicao: '', 
-    preco_atual: '',
+    preco_atual: '', // Corrigido nome do campo
     dias_duracao: '' 
   });
 
-  // Estado para edição (Modal)
+  // Estado para ediÃ§Ã£o (Modal)
   const [editingPlan, setEditingPlan] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -49,9 +45,10 @@ export function Plans() {
     }
   };
 
+  // ðŸ”¥ CORREÃ‡ÃƒO 1: Enviar selectedBot.id, nÃ£o o objeto selectedBot
   const handleCreate = async () => {
     if (!newPlan.nome_exibicao || !newPlan.preco_atual || !newPlan.dias_duracao) {
-      return Swal.fire('Atenção', 'Preencha todos os campos', 'warning');
+      return Swal.fire('AtenÃ§Ã£o', 'Preencha todos os campos', 'warning');
     }
 
     try {
@@ -65,36 +62,8 @@ export function Plans() {
       Swal.fire('Sucesso', 'Plano criado!', 'success');
       setNewPlan({ nome_exibicao: '', preco_atual: '', dias_duracao: '' });
       carregarPlanos();
-
-      // 🔥 NOVO: Marca ETAPA 3 como completa
-      updateOnboarding('plansCreated', true);
-
-      // 🔥 NOVO: Se está em onboarding, mostra próximo passo
-      if (!onboarding?.completed && onboarding?.steps.botConfigured && !onboarding?.steps.flowConfigured) {
-        setTimeout(() => {
-          Swal.fire({
-            title: 'Plano Criado! 🎉',
-            html: `
-              <p>Seu primeiro plano está ativo!</p>
-              <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">
-                Último passo: Configure o fluxo de mensagens do bot
-              </p>
-            `,
-            icon: 'success',
-            background: '#1b1730',
-            color: '#fff',
-            confirmButtonColor: '#c333ff',
-            confirmButtonText: 'Configurar Fluxo'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              navigate('/flow');
-            }
-          });
-        }, 1500);
-      }
-
     } catch (error) {
-      Swal.fire('Erro', 'Não foi possível criar o plano', 'error');
+      Swal.fire('Erro', 'NÃ£o foi possÃ­vel criar o plano', 'error');
     } finally {
       setLoading(false);
     }
@@ -105,13 +74,14 @@ export function Plans() {
     setIsEditModalOpen(true);
   };
 
+  // ðŸ”¥ CORREÃ‡ÃƒO 2: Enviar 3 argumentos: (BotID, PlanoID, Dados)
   const handleUpdate = async () => {
     if (!editingPlan) return;
     try {
       await planService.updatePlan(
-          selectedBot.id,
-          editingPlan.id,
-          {
+          selectedBot.id,      // Argumento 1: ID do Bot
+          editingPlan.id,      // Argumento 2: ID do Plano
+          {                    // Argumento 3: Dados
             nome_exibicao: editingPlan.nome_exibicao,
             preco_atual: parseFloat(editingPlan.preco_atual),
             dias_duracao: parseInt(editingPlan.dias_duracao),
@@ -129,10 +99,11 @@ export function Plans() {
     }
   };
 
+  // ðŸ”¥ CORREÃ‡ÃƒO 3: Enviar BotID e PlanoID
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: 'Tem certeza?',
-      text: "Isso apagará o plano permanentemente.",
+      text: "Isso apagarÃ¡ o plano permanentemente.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -158,7 +129,7 @@ export function Plans() {
 
       {selectedBot ? (
         <>
-          {/* CARD DE CRIAÇÃO */}
+          {/* CARD DE CRIAÃ‡ÃƒO */}
           <Card className="create-plan-card">
             <CardContent>
               <h3>Novo Plano</h3>
@@ -170,13 +141,13 @@ export function Plans() {
                   icon={<Tag size={18}/>}
                 />
                 <Input 
-                  placeholder="Preço (10.00)" type="number"
+                  placeholder="PreÃ§o (10.00)" type="number"
                   value={newPlan.preco_atual}
                   onChange={e => setNewPlan({...newPlan, preco_atual: e.target.value})}
                   icon={<DollarSign size={18}/>}
                 />
                 <Input 
-                  placeholder="Duração (dias)" type="number"
+                  placeholder="DuraÃ§Ã£o (dias)" type="number"
                   value={newPlan.dias_duracao}
                   onChange={e => setNewPlan({...newPlan, dias_duracao: e.target.value})}
                   icon={<Calendar size={18}/>}
@@ -213,7 +184,7 @@ export function Plans() {
             ))}
           </div>
 
-          {/* MODAL DE EDIÇÃO */}
+          {/* MODAL DE EDIÃ‡ÃƒO */}
           {isEditModalOpen && editingPlan && (
             <div className="modal-overlay">
               <div className="modal-content">
@@ -230,13 +201,13 @@ export function Plans() {
                   />
                   <div className="modal-row">
                      <Input 
-                      label="Preço (R$)" type="number"
+                      label="PreÃ§o (R$)" type="number"
                       value={editingPlan.preco_atual}
                       onChange={e => setEditingPlan({...editingPlan, preco_atual: e.target.value})}
                       icon={<DollarSign size={16}/>}
                     />
                     <Input 
-                      label="Duração (Dias)" type="number"
+                      label="DuraÃ§Ã£o (Dias)" type="number"
                       value={editingPlan.dias_duracao}
                       onChange={e => setEditingPlan({...editingPlan, dias_duracao: e.target.value})}
                       icon={<Calendar size={16}/>}
@@ -247,7 +218,7 @@ export function Plans() {
                 <div className="modal-footer">
                   <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
                   <Button onClick={handleUpdate}>
-                    <Check size={18} style={{marginRight: 8}}/> Salvar Alterações
+                    <Check size={18} style={{marginRight: 8}}/> Salvar AlteraÃ§Ãµes
                   </Button>
                 </div>
               </div>
@@ -257,7 +228,7 @@ export function Plans() {
         </>
       ) : (
         <div className="empty-state">
-            <h2>👈 Selecione um bot no menu lateral para gerenciar os planos.</h2>
+            <h2>ðŸ‘ˆ Selecione um bot no menu lateral para gerenciar os planos.</h2>
         </div>
       )}
     </div>

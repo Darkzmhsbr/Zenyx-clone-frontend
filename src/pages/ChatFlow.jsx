@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { Save, MessageSquare, ArrowDown, Zap, Image as ImageIcon, Video, Plus, Trash2, Edit, Clock, Layout, Globe, Smartphone, ShoppingBag } from 'lucide-react';
-import { flowService } from '../services/api';
-import { useBot } from '../context/BotContext';
-import { useAuth } from '../context/AuthContext'; // 🔥 NOVO
-import { useNavigate } from 'react-router-dom'; // 🔥 NOVO
+import { flowService } from '../services/api'; 
+import { useBot } from '../context/BotContext'; 
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
@@ -12,14 +10,12 @@ import { RichInput } from '../components/RichInput';
 import './ChatFlow.css';
 
 export function ChatFlow() {
-  const { selectedBot } = useBot();
-  const { updateOnboarding, onboarding } = useAuth(); // 🔥 NOVO
-  const navigate = useNavigate(); // 🔥 NOVO
+  const { selectedBot } = useBot(); 
   const [loading, setLoading] = useState(false);
   
   // Estado do Fluxo
   const [flow, setFlow] = useState({
-    start_mode: 'padrao',
+    start_mode: 'padrao', // 'padrao' ou 'miniapp'
     miniapp_url: '',
     miniapp_btn_text: 'ABRIR LOJA 🛍️',
     msg_boas_vindas: '',
@@ -37,7 +33,7 @@ export function ChatFlow() {
   
   // Estado do Modal
   const [showModal, setShowModal] = useState(false);
-  const [editingStep, setEditingStep] = useState(null);
+  const [editingStep, setEditingStep] = useState(null); 
   const [modalData, setModalData] = useState({
     msg_texto: '',
     msg_media: '',
@@ -88,58 +84,12 @@ export function ChatFlow() {
     }
     try {
       await flowService.saveFlow(selectedBot.id, flow);
-      
-      // 🔥 NOVO: Marca ETAPA 4 como completa (ÚLTIMA ETAPA!)
-      updateOnboarding('flowConfigured', true);
-
       Swal.fire({
         icon: 'success',
         title: 'Fluxo Salvo!',
-        toast: true, 
-        position: 'top-end', 
-        showConfirmButton: false, 
-        timer: 3000,
-        background: '#151515', 
-        color: '#fff'
+        toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
+        background: '#151515', color: '#fff'
       });
-
-      // 🔥 NOVO: Se acabou de completar onboarding, mostra mensagem especial
-      if (!onboarding?.completed && onboarding?.steps.plansCreated) {
-        setTimeout(() => {
-          Swal.fire({
-            title: '🎉 Parabéns! Setup Completo!',
-            html: `
-              <div style="text-align: center;">
-                <p style="font-size: 1.1rem; margin-bottom: 15px;">
-                  Seu bot está 100% configurado e pronto para vender!
-                </p>
-                <div style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p style="color: #10b981; font-weight: bold; margin-bottom: 10px;">✅ Todas as etapas concluídas:</p>
-                  <p style="font-size: 0.9rem; color: #888;">
-                    ✓ Bot Criado<br>
-                    ✓ Bot Configurado<br>
-                    ✓ Planos Criados<br>
-                    ✓ Fluxo Configurado
-                  </p>
-                </div>
-                <p style="color: #888; font-size: 0.9rem;">
-                  Agora você tem acesso completo a todas as funcionalidades!
-                </p>
-              </div>
-            `,
-            icon: 'success',
-            background: '#1b1730',
-            color: '#fff',
-            confirmButtonColor: '#10b981',
-            confirmButtonText: 'Ir para Dashboard 🚀',
-            allowOutsideClick: false,
-            allowEscapeKey: false
-          }).then(() => {
-            navigate('/dashboard');
-          });
-        }, 3500);
-      }
-
     } catch (error) {
       Swal.fire('Erro', 'Falha ao salvar.', 'error');
     }
@@ -165,425 +115,244 @@ export function ChatFlow() {
   };
 
   const handleSaveStep = async () => {
+    if (!modalData.msg_texto && !modalData.msg_media) {
+      return Swal.fire('Atenção', 'O passo precisa ter texto ou mídia!', 'warning');
+    }
     try {
-      if (editingStep) {
-        await flowService.updateStep(selectedBot.id, editingStep.id, modalData);
-        Swal.fire('Sucesso', 'Passo atualizado', 'success');
-      } else {
-        await flowService.createStep(selectedBot.id, modalData);
-        Swal.fire('Sucesso', 'Passo adicionado', 'success');
-      }
-      setShowModal(false);
-      carregarTudo();
+        if (editingStep) {
+            await flowService.updateStep(selectedBot.id, editingStep.id, modalData);
+            Swal.fire({ icon: 'success', title: 'Passo Atualizado!', timer: 1500, showConfirmButton: false, background: '#151515', color: '#fff' });
+        } else {
+            await flowService.addStep(selectedBot.id, { ...modalData, step_order: steps.length + 1 });
+            Swal.fire({ icon: 'success', title: 'Passo Adicionado!', timer: 1500, showConfirmButton: false, background: '#151515', color: '#fff' });
+        }
+        setShowModal(false);
+        setEditingStep(null);
+        carregarTudo(); 
     } catch (error) {
-      Swal.fire('Erro', 'Falha ao salvar passo', 'error');
+        Swal.fire('Erro', 'Falha ao salvar passo.', 'error');
     }
   };
 
   const handleDeleteStep = async (stepId) => {
     const result = await Swal.fire({
-      title: 'Excluir passo?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      confirmButtonText: 'Sim, excluir'
+        title: 'Excluir Passo?',
+        text: "Isso removerá esta mensagem do fluxo.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sim, excluir',
+        background: '#151515', 
+        color: '#fff'
     });
-
     if (result.isConfirmed) {
-      try {
-        await flowService.deleteStep(selectedBot.id, stepId);
-        Swal.fire('Deletado!', '', 'success');
-        carregarTudo();
-      } catch (error) {
-        Swal.fire('Erro', 'Falha ao deletar', 'error');
-      }
+        try {
+            await flowService.deleteStep(selectedBot.id, stepId);
+            carregarTudo();
+        } catch (error) {
+            Swal.fire('Erro', 'Falha ao excluir.', 'error');
+        }
     }
   };
 
-  if (!selectedBot) {
-    return (
-      <div className="empty-state" style={{ padding: '50px', textAlign: 'center' }}>
-        <h2>👈 Selecione um bot no menu lateral para configurar o fluxo.</h2>
-      </div>
-    );
-  }
+  if (!selectedBot) return <div className="chatflow-container">Selecione um bot...</div>;
 
   return (
     <div className="chatflow-container">
-      <div className="header-section">
-        <div>
-          <h1>Configurar Fluxo de Chat</h1>
-          <p style={{ color: 'var(--muted-foreground)', marginTop: '8px' }}>
-            Personalize as mensagens que seu bot envia aos clientes.
-          </p>
+      
+      {/* 🔥 CLASSE NOVA: chatflow-header */}
+      <div className="chatflow-header">
+        <div className="header-titles">
+          <h1>Editor de Fluxo</h1>
+          <p>Configure a sequência de mensagens do seu bot.</p>
+        </div>
+        <div className="header-actions">
+          <Button onClick={handleSaveFixed} disabled={loading} className="btn-save-main">
+            <Save size={20} style={{marginRight: '8px'}} /> 
+            SALVAR ALTERAÇÕES
+          </Button>
         </div>
       </div>
 
-      {/* CARD: MODO DE ENTRADA */}
-      <Card style={{ marginBottom: '20px' }}>
-        <CardContent style={{ padding: '25px' }}>
-          <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Layout size={20} />
-            Modo de Entrada do Bot
-          </h3>
-          
-          <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
-            <label style={{ 
-              flex: 1, 
-              padding: '20px', 
-              border: flow.start_mode === 'padrao' ? '2px solid #c333ff' : '1px solid #333',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              background: flow.start_mode === 'padrao' ? 'rgba(195, 51, 255, 0.05)' : 'transparent',
-              transition: 'all 0.2s'
-            }}>
-              <input 
-                type="radio" 
-                name="start_mode" 
-                value="padrao"
-                checked={flow.start_mode === 'padrao'}
-                onChange={(e) => setFlow({...flow, start_mode: e.target.value})}
-                style={{ marginRight: '10px' }}
-              />
-              <MessageSquare size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-              <strong>Chat Tradicional</strong>
-              <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '8px', marginLeft: '28px' }}>
-                Usuário começa pelo chat normal e vê mensagens de boas-vindas.
-              </p>
-            </label>
-
-            <label style={{ 
-              flex: 1, 
-              padding: '20px', 
-              border: flow.start_mode === 'miniapp' ? '2px solid #10b981' : '1px solid #333',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              background: flow.start_mode === 'miniapp' ? 'rgba(16, 185, 129, 0.05)' : 'transparent',
-              transition: 'all 0.2s'
-            }}>
-              <input 
-                type="radio" 
-                name="start_mode" 
-                value="miniapp"
-                checked={flow.start_mode === 'miniapp'}
-                onChange={(e) => setFlow({...flow, start_mode: e.target.value})}
-                style={{ marginRight: '10px' }}
-              />
-              <ShoppingBag size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-              <strong>Mini App (Loja)</strong>
-              <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '8px', marginLeft: '28px' }}>
-                Bot abre direto na loja visual. Mensagens aparecem depois da compra.
-              </p>
-            </label>
-          </div>
-
-          {flow.start_mode === 'miniapp' && (
-            <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-              <label style={{ display: 'block', marginBottom: '10px', color: '#ccc', fontWeight: 'bold' }}>
-                <Globe size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-                URL do Mini App
-              </label>
-              <Input 
-                value={flow.miniapp_url}
-                onChange={(e) => setFlow({...flow, miniapp_url: e.target.value})}
-                placeholder="https://zenyxvips.com/loja/123"
-                style={{ marginBottom: '15px' }}
-              />
-              
-              <label style={{ display: 'block', marginBottom: '10px', color: '#ccc' }}>Texto do Botão de Abertura</label>
-              <Input 
-                value={flow.miniapp_btn_text}
-                onChange={(e) => setFlow({...flow, miniapp_btn_text: e.target.value})}
-                placeholder="ABRIR LOJA 🛍️"
-              />
+      <div className="flow-grid">
+         {/* COLUNA ESQUERDA: VISUALIZAÇÃO CELULAR */}
+         <div className="preview-column">
+            <div className="iphone-mockup">
+                <div className="notch"></div>
+                <div className="screen-content">
+                    <div className="chat-header-mock">
+                        <div className="bot-avatar-mock">🤖</div>
+                        <div className="bot-info-mock">
+                            <strong>{selectedBot?.nome || "Seu Bot"}</strong>
+                            <span>bot</span>
+                        </div>
+                    </div>
+                    <div className="messages-area">
+                        <div className="msg-bubble bot">
+                            {flow.media_url && (
+                                <div className="media-preview-mock">
+                                    {flow.media_url.includes('mp4') ? <Video size={20}/> : <ImageIcon size={20}/>} Mídia
+                                </div>
+                            )}
+                            <p>{flow.msg_boas_vindas || "Olá! Configure sua mensagem..."}</p>
+                        </div>
+                        {flow.start_mode === 'padrao' && flow.btn_text_1 && (
+                            <div className="btn-bubble">{flow.btn_text_1}</div>
+                        )}
+                        {flow.start_mode === 'miniapp' && (
+                             <div className="btn-bubble store-btn">
+                                <Smartphone size={14} style={{marginRight:4}}/>
+                                {flow.miniapp_btn_text}
+                             </div>
+                        )}
+                        {steps.map((s, idx) => (
+                            <div key={idx} style={{opacity: 0.7, marginTop: 10}}>
+                                <div className="msg-bubble bot">
+                                    {s.msg_media && <div className="media-preview-mock"><ImageIcon size={14}/></div>}
+                                    <p>{s.msg_texto}</p>
+                                </div>
+                                {s.btn_texto && <div className="btn-bubble">{s.btn_texto}</div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+         </div>
 
-      {/* CARD: MENSAGEM 1 (BOAS-VINDAS) */}
-      <Card style={{ marginBottom: '20px' }}>
-        <CardContent style={{ padding: '25px' }}>
-          <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <MessageSquare size={20} color="#c333ff" />
-            Mensagem 1: Boas-Vindas
-          </h3>
+         {/* COLUNA DIREITA: CONFIGURAÇÃO */}
+         <div className="config-column">
+            <Card className="step-card start-mode-card">
+                <CardContent>
+                    <div className="card-header-row">
+                        <Layout size={24} color="#c333ff" />
+                        <h3>Modo de Início do Bot (/start)</h3>
+                    </div>
+                    <div className="mode-selector-grid">
+                        <div className={`mode-card ${flow.start_mode === 'padrao' ? 'selected-padrao' : ''}`}
+                             onClick={() => setFlow({...flow, start_mode: 'padrao'})}>
+                            <div className="mode-icon"><MessageSquare size={28} /></div>
+                            <div className="mode-info"><h4>Fluxo Padrão</h4><p>Mensagem + Botão que libera conteúdo.</p></div>
+                            {flow.start_mode === 'padrao' && <div className="check-badge">ATIVO</div>}
+                        </div>
+                        <div className={`mode-card ${flow.start_mode === 'miniapp' ? 'selected-miniapp' : ''}`}
+                             onClick={() => setFlow({...flow, start_mode: 'miniapp'})}>
+                            <div className="mode-icon"><Smartphone size={28} /></div>
+                            <div className="mode-info"><h4>Mini App / Loja</h4><p>Botão Web App que abre a loja direta.</p></div>
+                            {flow.start_mode === 'miniapp' && <div className="check-badge">ATIVO</div>}
+                        </div>
+                    </div>
+                    {flow.start_mode === 'miniapp' && (
+                        <div className="miniapp-config-box">
+                            <Input label="Link da Loja / Mini App" value={flow.miniapp_url} onChange={e => setFlow({...flow, miniapp_url: e.target.value})} icon={<Globe size={16} />} />
+                            <Input label="Texto do Botão" value={flow.miniapp_btn_text} onChange={e => setFlow({...flow, miniapp_btn_text: e.target.value})} />
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
-          <RichInput
-            label="Texto da Mensagem"
-            value={flow.msg_boas_vindas}
-            onChange={(val) => setFlow({...flow, msg_boas_vindas: val})}
-            placeholder="Olá! Bem-vindo ao nosso canal VIP..."
-          />
+            <div className="flow-connector"><ArrowDown size={24} /></div>
 
-          <Input 
-            label="URL da Mídia (opcional)"
-            icon={<ImageIcon size={18} />}
-            value={flow.media_url}
-            onChange={(e) => setFlow({...flow, media_url: e.target.value})}
-            placeholder="https://exemplo.com/imagem.jpg"
-            helper="Link de uma foto ou vídeo para enviar junto"
-          />
+            <Card className="step-card">
+                <div className="step-badge">Passo 1 (Início)</div>
+                <CardContent>
+                    <div className="step-header">
+                        <div className="step-title-row"><MessageSquare size={20} color="#d65ad1"/><h3>Mensagem de Boas-Vindas</h3></div>
+                    </div>
+                    <div className="form-grid">
+                        <RichInput label="Texto da Mensagem" value={flow.msg_boas_vindas} onChange={val => setFlow({...flow, msg_boas_vindas: typeof val === 'object' ? val.target.value : val})} />
+                        <Input label="Link da Mídia (Opcional)" value={flow.media_url} onChange={e => setFlow({...flow, media_url: e.target.value})} icon={<ImageIcon size={16}/>} />
+                        {flow.start_mode === 'padrao' && (
+                            <div className="buttons-config">
+                                <div className="toggle-wrapper full-width">
+                                    <label>Mostrar botões de Planos (Checkout) nesta mensagem?</label>
+                                    <div className={`custom-toggle ${flow.mostrar_planos_1 ? 'active-green' : ''}`} onClick={() => setFlow({...flow, mostrar_planos_1: !flow.mostrar_planos_1})}>
+                                        <div className="toggle-handle"></div><span className="toggle-label">{flow.mostrar_planos_1 ? 'SIM' : 'NÃO'}</span>
+                                    </div>
+                                </div>
+                                {!flow.mostrar_planos_1 && (
+                                    <div className="row-inputs">
+                                        <Input label="Texto do Botão de Ação" value={flow.btn_text_1} onChange={e => setFlow({...flow, btn_text_1: e.target.value})} />
+                                        <div className="toggle-wrapper">
+                                            <label>Auto-destruir ao clicar?</label>
+                                            <div className={`custom-toggle ${flow.autodestruir_1 ? 'active' : ''}`} onClick={() => setFlow({...flow, autodestruir_1: !flow.autodestruir_1})}>
+                                                <div className="toggle-handle"></div><span className="toggle-label">{flow.autodestruir_1 ? 'SIM' : 'NÃO'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
-          <Input 
-            label="Texto do Botão Principal"
-            value={flow.btn_text_1}
-            onChange={(e) => setFlow({...flow, btn_text_1: e.target.value})}
-            placeholder="🔓 DESBLOQUEAR ACESSO"
-          />
-
-          <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input 
-                type="checkbox"
-                checked={flow.mostrar_planos_1}
-                onChange={(e) => setFlow({...flow, mostrar_planos_1: e.target.checked})}
-              />
-              <span style={{ color: '#ccc' }}>Mostrar planos nesta mensagem</span>
-            </label>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input 
-                type="checkbox"
-                checked={flow.autodestruir_1}
-                onChange={(e) => setFlow({...flow, autodestruir_1: e.target.checked})}
-              />
-              <span style={{ color: '#ccc' }}>Auto-destruir após 30s</span>
-            </label>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* CARD: MENSAGEM 2 */}
-      <Card style={{ marginBottom: '20px' }}>
-        <CardContent style={{ padding: '25px' }}>
-          <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ArrowDown size={20} color="#10b981" />
-            Mensagem 2: Apresentação dos Planos
-          </h3>
-
-          <RichInput
-            label="Texto da Mensagem 2"
-            value={flow.msg_2_texto}
-            onChange={(val) => setFlow({...flow, msg_2_texto: val})}
-            placeholder="Escolha o plano ideal para você..."
-          />
-
-          <Input 
-            label="URL da Mídia (opcional)"
-            icon={<Video size={18} />}
-            value={flow.msg_2_media}
-            onChange={(e) => setFlow({...flow, msg_2_media: e.target.value})}
-            placeholder="https://exemplo.com/video.mp4"
-          />
-
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '15px' }}>
-            <input 
-              type="checkbox"
-              checked={flow.mostrar_planos_2}
-              onChange={(e) => setFlow({...flow, mostrar_planos_2: e.target.checked})}
-            />
-            <span style={{ color: '#ccc' }}>Mostrar planos disponíveis</span>
-          </label>
-        </CardContent>
-      </Card>
-
-      {/* BOTÃO SALVAR FIXO */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '30px' }}>
-        <Button onClick={handleSaveFixed} disabled={loading}>
-          <Save size={18} /> Salvar Fluxo Fixo
-        </Button>
+            {flow.start_mode === 'padrao' && (
+                <>
+                    <div className="connector-line"></div><div className="connector-arrow"><ArrowDown size={24} color="#444" /></div>
+                    {steps.map((step, index) => (
+                        <React.Fragment key={step.id}>
+                            <Card className="step-card step-card-dynamic">
+                                <div className="step-badge dynamic-badge">Passo Extra {index + 1}</div>
+                                <CardContent>
+                                    <div className="step-header">
+                                        <div className="step-title-row"><Zap size={20} color="#fff"/><h3>Mensagem Intermediária</h3></div>
+                                        <div className="step-actions">
+                                            <button className="icon-btn edit" onClick={() => handleOpenEditModal(step)}><Edit size={18} color="#3b82f6"/></button>
+                                            <button className="icon-btn danger" onClick={() => handleDeleteStep(step.id)}><Trash2 size={18} color="#ef4444"/></button>
+                                        </div>
+                                    </div>
+                                    <div className="preview-box"><p>{step.msg_texto ? step.msg_texto.substring(0, 100) : '(Mídia)'}</p></div>
+                                </CardContent>
+                            </Card>
+                            <div className="connector-line"></div><div className="connector-arrow"><ArrowDown size={24} color="#444" /></div>
+                        </React.Fragment>
+                    ))}
+                    <div className="add-step-wrapper">
+                        <button className="btn-add-step" onClick={handleOpenCreateModal}><Plus size={20} /> Adicionar Nova Mensagem</button>
+                    </div>
+                    <div className="connector-line"></div><div className="connector-arrow"><ArrowDown size={24} color="#444" /></div>
+                    <Card className="step-card">
+                        <div className="step-badge final">Passo Final (Oferta)</div>
+                        <CardContent>
+                            <div className="step-header"><div className="step-title-row"><ShoppingBag size={20} color="#10b981"/><h3>Mensagem de Oferta & Checkout</h3></div></div>
+                            <div className="form-grid">
+                                <RichInput label="Texto da Oferta" value={flow.msg_2_texto} onChange={val => setFlow({...flow, msg_2_texto: typeof val === 'object' ? val.target.value : val})} />
+                                <Input label="Mídia da Oferta (Opcional)" value={flow.msg_2_media} onChange={e => setFlow({...flow, msg_2_media: e.target.value})} icon={<Video size={16}/>} />
+                                <div className="toggle-wrapper full-width">
+                                    <label>Mostrar botões de Planos automaticamente?</label>
+                                    <div className={`custom-toggle ${flow.mostrar_planos_2 ? 'active-green' : ''}`} onClick={() => setFlow({...flow, mostrar_planos_2: !flow.mostrar_planos_2})}>
+                                        <div className="toggle-handle"></div><span className="toggle-label">{flow.mostrar_planos_2 ? 'SIM' : 'OCULTAR'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+         </div>
       </div>
 
-      {/* PASSOS DINÂMICOS */}
-      <Card>
-        <CardContent style={{ padding: '25px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Zap size={20} />
-              Passos Extras (Opcionais)
-            </h3>
-            <Button onClick={handleOpenCreateModal}>
-              <Plus size={18} /> Adicionar Passo
-            </Button>
-          </div>
-
-          {steps.length === 0 ? (
-            <p style={{ color: '#666', textAlign: 'center', padding: '30px' }}>
-              Nenhum passo extra criado ainda.
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gap: '15px' }}>
-              {steps.map((step, idx) => (
-                <div key={step.id} style={{
-                  padding: '20px',
-                  background: '#1a1a1a',
-                  border: '1px solid #333',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                      <span style={{ 
-                        background: '#c333ff', 
-                        color: '#fff', 
-                        padding: '4px 10px', 
-                        borderRadius: '6px', 
-                        fontSize: '12px',
-                        fontWeight: 'bold'
-                      }}>
-                        PASSO {idx + 1}
-                      </span>
-                      {step.delay_seconds > 0 && (
-                        <span style={{ fontSize: '12px', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={14} /> Aguarda {step.delay_seconds}s
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ color: '#ccc', fontSize: '14px', marginBottom: '8px' }}>
-                      {step.msg_texto ? step.msg_texto.substring(0, 100) : '(Sem texto)'}...
-                    </p>
-                    {step.msg_media && (
-                      <span style={{ fontSize: '12px', color: '#666' }}>
-                        📎 Mídia anexada
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      onClick={() => handleOpenEditModal(step)}
-                      style={{
-                        padding: '8px 12px',
-                        background: 'transparent',
-                        border: '1px solid #10b981',
-                        borderRadius: '6px',
-                        color: '#10b981',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <Edit size={16} /> Editar
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteStep(step.id)}
-                      style={{
-                        padding: '8px 12px',
-                        background: 'transparent',
-                        border: '1px solid #ef4444',
-                        borderRadius: '6px',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <Trash2 size={16} /> Excluir
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* MODAL DE CRIAR/EDITAR PASSO */}
       {showModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000
-        }}>
-          <div style={{
-            background: '#151515',
-            padding: '30px',
-            borderRadius: '12px',
-            width: '90%',
-            maxWidth: '600px',
-            border: '1px solid #333',
-            maxHeight: '90vh',
-            overflowY: 'auto'
-          }}>
-            <h3 style={{ marginBottom: '20px' }}>
-              {editingStep ? 'Editar Passo' : 'Novo Passo Extra'}
-            </h3>
-
-            <RichInput 
-              label="Texto da Mensagem"
-              value={modalData.msg_texto}
-              onChange={(val) => setModalData({...modalData, msg_texto: val})}
-              placeholder="Digite a mensagem..."
-            />
-
-            <Input 
-              label="URL da Mídia (opcional)"
-              value={modalData.msg_media}
-              onChange={(e) => setModalData({...modalData, msg_media: e.target.value})}
-              placeholder="https://exemplo.com/imagem.jpg"
-              icon={<ImageIcon size={18} />}
-            />
-
-            <Input 
-              label="Texto do Botão"
-              value={modalData.btn_texto}
-              onChange={(e) => setModalData({...modalData, btn_texto: e.target.value})}
-              placeholder="Próximo ▶️"
-            />
-
-            <Input 
-              label="Delay (segundos)"
-              type="number"
-              value={modalData.delay_seconds}
-              onChange={(e) => setModalData({...modalData, delay_seconds: parseInt(e.target.value) || 0})}
-              placeholder="0"
-              icon={<Clock size={18} />}
-              helper="Tempo de espera antes de enviar esta mensagem"
-            />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox"
-                  checked={modalData.mostrar_botao}
-                  onChange={(e) => setModalData({...modalData, mostrar_botao: e.target.checked})}
-                />
-                <span style={{ color: '#ccc' }}>Mostrar botão de navegação</span>
-              </label>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox"
-                  checked={modalData.autodestruir}
-                  onChange={(e) => setModalData({...modalData, autodestruir: e.target.checked})}
-                />
-                <span style={{ color: '#ccc' }}>Auto-destruir após 30s</span>
-              </label>
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <div className="modal-header-row"><h2>{editingStep ? 'Editar Mensagem' : 'Nova Mensagem'}</h2><button className="btn-close-modal" onClick={() => setShowModal(false)}>✕</button></div>
+                <div className="modal-body">
+                    <RichInput label="Texto" value={modalData.msg_texto} onChange={val => setModalData({...modalData, msg_texto: typeof val === 'object' ? val.target.value : val})} />
+                    <Input label="Mídia URL" value={modalData.msg_media} onChange={e => setModalData({...modalData, msg_media: e.target.value})} />
+                    <div className="modal-options-box">
+                        <label className="checkbox-label"><input type="checkbox" checked={modalData.mostrar_botao} onChange={e => setModalData({...modalData, mostrar_botao: e.target.checked})} /> Mostrar botão "Próximo"?</label>
+                        {modalData.mostrar_botao ? (<Input label="Texto do Botão" value={modalData.btn_texto} onChange={e => setModalData({...modalData, btn_texto: e.target.value})} />) : (<div className="delay-input-wrapper"><Input label="Intervalo (s)" type="number" value={modalData.delay_seconds} onChange={e => setModalData({...modalData, delay_seconds: parseInt(e.target.value) || 0})} icon={<Clock size={16}/>} /></div>)}
+                    </div>
+                    <div className="toggle-wrapper modal-toggle">
+                        <label>Auto-destruir?</label>
+                        <div className={`custom-toggle ${modalData.autodestruir ? 'active' : ''}`} onClick={() => setModalData({...modalData, autodestruir: !modalData.autodestruir})}><div className="toggle-handle"></div></div>
+                    </div>
+                    <div className="modal-actions"><button className="btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button><button className="btn-save" onClick={handleSaveStep}>Salvar</button></div>
+                </div>
             </div>
-
-            <div style={{ display: 'flex', gap: '10px', marginTop: '25px', justifyContent: 'flex-end' }}>
-              <Button variant="ghost" onClick={() => setShowModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveStep}>
-                <Save size={16} /> Salvar Passo
-              </Button>
-            </div>
-          </div>
         </div>
       )}
-
     </div>
   );
 }

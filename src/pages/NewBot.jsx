@@ -6,26 +6,24 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { botService } from '../services/api';
 import { useBot } from '../context/BotContext';
-import { useAuth } from '../context/AuthContext'; // 🔥 NOVO
 import './Bots.css';
 
 export function NewBot() {
   const navigate = useNavigate();
   const { refreshBots } = useBot();
-  const { updateOnboarding } = useAuth(); // 🔥 NOVO: Hook para marcar onboarding
   
   // Controle de Passos: 'selection' | 'form'
   const [step, setStep] = useState('selection');
-  // Define para onde ir após criar: 'geral' ou 'miniapp'
+  // Define para onde ir apÃ³s criar: 'geral' ou 'miniapp'
   const [targetTab, setTargetTab] = useState('geral');
 
-  // Estados do Formulário
+  // Estados do FormulÃ¡rio
   const [token, setToken] = useState('');
   const [channelId, setChannelId] = useState('');
   const [botName, setBotName] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Seleciona o tipo e avança para o formulário
+  // Seleciona o tipo e avanÃ§a para o formulÃ¡rio
   const handleSelectType = (type) => {
     setTargetTab(type === 'custom' ? 'miniapp' : 'geral');
     setStep('form');
@@ -49,24 +47,17 @@ export function NewBot() {
       // 2. Atualiza lista no contexto
       await refreshBots();
 
-      // 🔥 NOVO: 3. Marca ETAPA 1 como completa
-      updateOnboarding('botCreated', true);
-
       Swal.fire({
-        title: '✅ Bot Criado!',
-        html: `
-          <p style="margin-bottom: 10px;">Seu bot foi conectado com sucesso!</p>
-          <p style="color: #888; font-size: 0.9rem;">Próximo passo: Configurar o bot</p>
-        `,
+        title: 'Sucesso!',
+        text: 'Bot conectado com sucesso.',
         icon: 'success',
-        timer: 2000,
+        timer: 1500,
         showConfirmButton: false,
-        background: '#151515', 
-        color: '#fff'
+        background: '#151515', color: '#fff'
       });
 
-      // 4. Redireciona para a configuração JÁ NA ABA CERTA
-      // Passamos 'initialTab' no state da navegação
+      // 3. Redireciona para a configuraÃ§Ã£o JÃ NA ABA CERTA
+      // Passamos 'initialTab' no state da navegaÃ§Ã£o
       navigate(`/bots/config/${response.id}`, { 
         state: { initialTab: targetTab } 
       });
@@ -77,8 +68,7 @@ export function NewBot() {
         title: 'Erro!',
         text: error.response?.data?.detail || 'Falha ao criar bot.',
         icon: 'error',
-        background: '#151515', 
-        color: '#fff'
+        background: '#151515', color: '#fff'
       });
     } finally {
       setLoading(false);
@@ -98,7 +88,7 @@ export function NewBot() {
         </h1>
       </div>
 
-      {/* --- PASSO 1: SELEÇÃO --- */}
+      {/* --- PASSO 1: SELEÃ‡ÃƒO --- */}
       {step === 'selection' && (
         <div className="selection-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
           
@@ -118,7 +108,7 @@ export function NewBot() {
             </div>
             <h3 style={{ fontSize: '1.4rem', marginBottom: '10px' }}>Bot Tradicional</h3>
             <p style={{ color: '#888', lineHeight: '1.5', marginBottom: '20px' }}>
-              Focado em atendimento e vendas diretas. Configurar planos, mensagens automáticas, remarketing e gestão de assinaturas.
+              Focado em atendimento e vendas diretas. Configurar planos, mensagens automÃ¡ticas, remarketing e gestÃ£o de assinaturas.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', color: '#c333ff', fontWeight: 'bold', fontSize: '0.9rem' }}>
               Configurar Chat <ChevronRight size={16} />
@@ -141,7 +131,7 @@ export function NewBot() {
             </div>
             <h3 style={{ fontSize: '1.4rem', marginBottom: '10px' }}>Bot Personalizado (Loja)</h3>
             <p style={{ color: '#888', lineHeight: '1.5', marginBottom: '20px' }}>
-              Crie uma experiência visual rica com Mini App. Configure interface de loja, categorias, mídias, banners e catálogo de produtos.
+              Crie uma experiÃªncia visual rica com Mini App. Configure interface de loja, categorias, mÃ­dias, banners e catÃ¡logo de produtos.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem' }}>
               Criar Loja / MiniApp <ChevronRight size={16} />
@@ -151,7 +141,7 @@ export function NewBot() {
         </div>
       )}
 
-      {/* --- PASSO 2: FORMULÁRIO (Igual ao anterior) --- */}
+      {/* --- PASSO 2: FORMULÃRIO (Igual ao anterior) --- */}
       {step === 'form' && (
         <div className="form-container" style={{ maxWidth: '500px', margin: '0 auto', animation: 'fadeIn 0.3s ease' }}>
           <div style={{ background: '#151515', padding: '30px', borderRadius: '12px', border: '1px solid #333' }}>
