@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ChevronDown, 
   Bot, 
@@ -10,186 +10,178 @@ import {
   MessageSquare, 
   CreditCard,
   BookOpen,
-  HelpCircle
+  HelpCircle,
+  Zap
 } from 'lucide-react';
-import './Dashboard.css'; // Reutilizando os estilos base de layout
+import './LandingPage.css'; // Importando os estilos de animação e cores premium
 
 export function Tutorial() {
-  // Estado para controlar qual seletor está aberto (null = todos fechados)
-  const [openStep, setOpenStep] = useState(null);
+  const [openIndex, setOpenIndex] = useState(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Função para abrir/fechar o seletor (Lógica: se clica no que já está aberto, ele fecha)
-  const toggleStep = (index) => {
-    setOpenStep(openStep === index ? null : index);
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  const toggleTutorial = (index) => {
+    setOpenIndex(openIndex === index ? null : index);
   };
 
-  // Dados extraídos do seu PDF "Guia Definitivo 2026"
   const steps = [
     {
-      icon: <Bot size={24} className="text-primary" />,
+      icon: <Bot size={24} />,
       title: "Etapa 1 - Criando o Bot no Telegram",
-      content: (
-        <div className="space-y-3">
-          <p>Acesse o Telegram e pesquise por <strong>@BotFather</strong>. Clique em Iniciar e execute o comando <code>/newbot</code>.</p>
-          <ul className="list-disc ml-5 space-y-2 text-sm text-muted-foreground">
-            <li>Defina o <strong>Nome do Bot</strong> (ex: Zenyx VIP).</li>
-            <li>Defina o <strong>Username</strong> (ex: zenyxVIPsbot) - Deve terminar obrigatoriamente em "bot".</li>
-            <li><strong>Importante:</strong> Copie o Token API fornecido (aquela sequência longa de números e letras).</li>
-          </ul>
-        </div>
-      )
+      content: "Acesse o Telegram e pesquise por @BotFather. Envie o comando /newbot, escolha o nome e o username do seu bot. Ao final, você receberá o Token API. Guarde-o com segurança."
     },
     {
-      icon: <ShieldCheck size={24} className="text-primary" />,
+      icon: <ShieldCheck size={24} />,
       title: "Etapa 2 - Canal ou Grupo VIP",
-      content: (
-        <div className="space-y-3">
-          <p>Crie o Canal ou Grupo que será o seu produto VIP.</p>
-          <ul className="list-disc ml-5 space-y-2 text-sm text-muted-foreground">
-            <li>Configure o canal/grupo como <strong>PRIVADO</strong>.</li>
-            <li>Adicione o seu Bot recém-criado como <strong>Administrador</strong>.</li>
-            <li>Garanta que o bot tenha permissões para: Convidar usuários e Gerenciar mensagens.</li>
-          </ul>
-        </div>
-      )
+      content: "Crie o canal ou grupo que será seu produto. Coloque-o como PRIVADO e adicione seu bot recém-criado como administrador com permissão total."
     },
     {
-      icon: <Fingerprint size={24} className="text-primary" />,
+      icon: <Fingerprint size={24} />,
       title: "Etapa 3 - Obtendo IDs de Identificação",
-      content: (
-        <div className="space-y-3">
-          <p>Você precisa do ID numérico do seu canal para o sistema saber onde liberar os membros.</p>
-          <ul className="list-disc ml-5 space-y-2 text-sm text-muted-foreground">
-            <li>Use o bot <strong>@ScanIDBot</strong> ou <strong>@RawDataBot</strong>.</li>
-            <li>Encaminhe uma mensagem do seu canal VIP para ele ou adicione-o temporariamente ao grupo.</li>
-            <li>O ID geralmente começa com <code>-100</code> (ex: -100123456789). Copie este número.</li>
-          </ul>
-        </div>
-      )
+      content: "Use o bot @ScanIDBot. Encaminhe uma mensagem do seu canal para ele para obter o ID numérico (ex: -100...). Esse ID é essencial para o sistema Zenyx gerenciar os membros."
     },
     {
-      icon: <Rocket size={24} className="text-primary" />,
+      icon: <Rocket size={24} />,
       title: "Etapa 4 - Cadastro na Plataforma Zenyx",
-      content: (
-        <div className="space-y-3">
-          <p>Vincule seu robô ao nosso sistema:</p>
-          <p className="text-sm text-muted-foreground">No menu lateral, vá em <strong>"Meus Bots"</strong> &gt; <strong>"Novo Bot"</strong> e preencha o Nome, Username, Token API e o ID do Canal capturado na etapa anterior.</p>
-        </div>
-      )
+      content: "No painel, vá em 'Meus Bots' > 'Novo Bot'. Preencha os dados e cole o Token do Telegram. Isso ativa a conexão entre a Zenyx e o seu robô."
     },
     {
-      icon: <Settings size={24} className="text-primary" />,
+      icon: <Settings size={24} />,
       title: "Etapa 5 - Configurações Gerais",
-      content: (
-        <div className="space-y-3">
-          <p>Em <strong>"Gerenciar Bots"</strong>, ajuste os detalhes operacionais:</p>
-          <ul className="list-disc ml-5 space-y-2 text-sm text-muted-foreground">
-            <li><strong>Admin Principal:</strong> Insira seu ID pessoal do Telegram para receber notificações de vendas.</li>
-            <li><strong>Suporte:</strong> Coloque o @ do seu perfil de atendimento para os clientes tirarem dúvidas.</li>
-          </ul>
-        </div>
-      )
+      content: "Configure seu ID de Admin Principal para receber alertas de vendas e o @ de suporte para que seus clientes possam falar com você."
     },
     {
-      icon: <Gem size={24} className="text-primary" />,
+      icon: <Gem size={24} />,
       title: "Etapa 6 - Criar Planos de Acesso",
-      content: (
-        <div className="space-y-3">
-          <p>Defina como você vai cobrar pelo seu conteúdo:</p>
-          <p className="text-sm text-muted-foreground">Vá em <strong>"Planos e Ofertas"</strong>. Crie planos como "Semanal", "Mensal" ou "Vitalício". Defina o valor e o tempo de permanência automática no grupo.</p>
-        </div>
-      )
+      content: "Vá em 'Planos e Ofertas'. Crie planos semanais, mensais ou vitalícios. O sistema gerencia os prazos e remove quem não pagar automaticamente."
     },
     {
-      icon: <MessageSquare size={24} className="text-primary" />,
+      icon: <MessageSquare size={24} />,
       title: "Etapa 7 - Fluxo de Mensagens (Flow Chat)",
-      content: (
-        <div className="space-y-3">
-          <p>Configure o funil automático que o cliente verá ao iniciar o bot:</p>
-          <ul className="list-disc ml-5 space-y-2 text-sm text-muted-foreground">
-            <li><strong>Mensagem 1:</strong> Boas-vindas.</li>
-            <li><strong>Mensagem 2:</strong> Prova social ou benefícios.</li>
-            <li><strong>Regra de Ouro:</strong> Cada mensagem pode ter um Botão OU um Atraso (Delay), nunca os dois ao mesmo tempo.</li>
-          </ul>
-        </div>
-      )
+      content: "Crie o funil de vendas. Lembre-se da regra de ouro: cada mensagem pode ter um Botão OU um Atraso (Delay), nunca os dois no mesmo passo."
     },
     {
-      icon: <CreditCard size={24} className="text-primary" />,
+      icon: <CreditCard size={24} />,
       title: "Etapa 8 - Ativar Oferta e Checkout",
-      content: (
-        <div className="space-y-3">
-          <p>Para o cliente conseguir pagar, a última mensagem do seu fluxo deve ter a opção <strong>"Mostrar planos junto com essa mensagem"</strong> ativada.</p>
-          <p className="font-semibold text-primary mt-2">Pronto! Seu sistema agora operará em escala 100% automática.</p>
-        </div>
-      )
+      content: "Na última mensagem do seu fluxo, ative a opção 'Mostrar planos'. Isso habilitará o botão de pagamento e automatizará toda a sua escala."
     }
   ];
 
   return (
-    <div className="dashboard-container" style={{ marginTop: '70px', marginLeft: 'var(--sidebar-width)', padding: '20px' }}>
-      <div className="dashboard-content max-w-4xl mx-auto">
+    <div className="dashboard-container" style={{ marginTop: '70px', marginLeft: 'var(--sidebar-width)', padding: '40px 20px', minHeight: '100vh', background: '#050507' }}>
+      <div className="max-w-4xl mx-auto">
         
-        {/* Cabeçalho da Página */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-primary/10 rounded-xl">
-            <BookOpen className="text-primary" size={32} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Central de Tutoriais</h1>
-            <p className="text-muted-foreground">Siga o passo a passo para configurar sua operação Zenyx.</p>
-          </div>
+        {/* Cabeçalho Estilo Landing Page */}
+        <div className={`section-header ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`} style={{ textAlign: 'center', marginBottom: '50px' }}>
+          <span className="section-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '100px', background: 'rgba(195, 51, 255, 0.1)', border: '1px solid rgba(195, 51, 255, 0.2)', color: 'var(--primary-color)', fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>
+            <Zap size={14} /> Guia de Configuração
+          </span>
+          <h2 className="section-title" style={{ fontSize: '2.5rem', fontWeight: '800', color: '#fff', marginBottom: '16px' }}>
+            Tutoriais{' '}
+            <span style={{
+              background: 'linear-gradient(90deg, #c333ff 0%, #38bdf8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              Passo a Passo
+            </span>
+          </h2>
+          <p className="section-subtitle" style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '600px', margin: '0 auto' }}>
+            Siga as orientações abaixo para ativar sua operação automática em poucos minutos.
+          </p>
         </div>
 
-        {/* Lista de Seletores (Accordion) */}
-        <div className="grid gap-4">
-          {steps.map((step, index) => (
+        {/* Lista de Tutoriais (Estilo TutorialsSection) */}
+        <div className="tutorials-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {steps.map((tutorial, index) => (
             <div 
               key={index} 
-              className={`tutorial-card border rounded-2xl overflow-hidden transition-all duration-300 ${openStep === index ? 'bg-card ring-1 ring-primary/30' : 'bg-card/50 hover:bg-card'}`}
-              style={{ borderColor: 'var(--border)' }}
+              className={`tutorial-item ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`} 
+              style={{ 
+                animationDelay: `${index * 0.1}s`,
+                background: 'rgba(15, 15, 25, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                backdropFilter: 'blur(10px)'
+              }}
             >
-              <button 
-                onClick={() => toggleStep(index)}
-                className="w-full flex items-center justify-between p-5 text-left focus:outline-none"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg transition-colors ${openStep === index ? 'bg-primary text-white' : 'bg-secondary'}`}>
-                    {step.icon}
-                  </div>
-                  <span className={`font-semibold text-lg ${openStep === index ? 'text-primary' : ''}`}>
-                    {step.title}
-                  </span>
-                </div>
-                <ChevronDown 
-                  size={20} 
-                  className={`transition-transform duration-300 ${openStep === index ? 'rotate-180 text-primary' : 'text-muted-foreground'}`} 
-                />
-              </button>
-
-              {/* Conteúdo Expansível */}
               <div 
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${openStep === index ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
+                className="tutorial-header" 
+                onClick={() => toggleTutorial(index)}
+                style={{
+                  padding: '20px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '20px',
+                  cursor: 'pointer',
+                  transition: 'background 0.3s ease'
+                }}
               >
-                <div className="p-5 pt-0 border-t border-dashed" style={{ borderColor: 'var(--border)' }}>
-                  <div className="mt-4 leading-relaxed text-sm md:text-base">
-                    {step.content}
-                  </div>
+                <div className="tutorial-icon" style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'linear-gradient(135deg, rgba(195, 51, 255, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#c333ff',
+                  border: '1px solid rgba(195, 51, 255, 0.3)'
+                }}>
+                  {tutorial.icon}
+                </div>
+                <h3 className="tutorial-title" style={{
+                  flex: 1,
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  color: openIndex === index ? '#c333ff' : '#fff',
+                  transition: 'color 0.3s ease'
+                }}>
+                  {tutorial.title}
+                </h3>
+                <ChevronDown 
+                  size={24} 
+                  style={{
+                    color: openIndex === index ? '#c333ff' : 'rgba(255,255,255,0.4)',
+                    transform: openIndex === index ? 'rotate(180deg)' : 'rotate(0)',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                />
+              </div>
+              
+              <div 
+                className={`tutorial-content ${openIndex === index ? 'active' : ''}`}
+                style={{
+                  maxHeight: openIndex === index ? '300px' : '0',
+                  opacity: openIndex === index ? '1' : '0',
+                  overflow: 'hidden',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  background: 'rgba(0,0,0,0.2)'
+                }}
+              >
+                <div className="tutorial-content-inner" style={{ padding: '0 24px 24px 92px', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                  {tutorial.content}
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Rodapé de Suporte */}
-        <div className="mt-12 p-6 rounded-2xl bg-primary/5 border border-primary/10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <HelpCircle size={24} className="text-primary" />
-            <p className="text-sm font-medium">Ainda precisa de ajuda com a configuração?</p>
+        {/* Footer de Ajuda */}
+        <div className={`animate-fade-in-up`} style={{ animationDelay: '1s', marginTop: '60px', textAlign: 'center' }}>
+          <div style={{ padding: '30px', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(195, 51, 255, 0.05) 0%, rgba(56, 189, 248, 0.05) 100%)', border: '1px solid rgba(195, 51, 255, 0.1)' }}>
+            <HelpCircle size={40} style={{ color: '#c333ff', marginBottom: '15px', margin: '0 auto 15px' }} />
+            <h4 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '8px' }}>Dúvidas Específicas?</h4>
+            <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '20px' }}>Nosso suporte técnico está disponível para te ajudar em qualquer etapa.</p>
+            <button className="btn-primary" style={{ padding: '12px 30px', borderRadius: '12px', background: '#c333ff', color: '#fff', border: 'none', fontWeight: '600', cursor: 'pointer', boxShadow: '0 10px 20px rgba(195, 51, 255, 0.2)' }}>
+              Falar com Especialista
+            </button>
           </div>
-          <button className="px-6 py-2 bg-primary text-white rounded-full font-semibold hover:bg-primary/90 transition-colors">
-            Falar com Suporte
-          </button>
         </div>
 
       </div>
