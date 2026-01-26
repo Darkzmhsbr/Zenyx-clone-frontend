@@ -24,12 +24,21 @@ export function Footer() {
             </ul>
           </div>
 
-          {/*
+          {/* Coluna 2: Legal (NOVO) */}
+          <div className="footer-column">
+            <h4>Legal</h4>
+            <ul className="footer-links">
+              <li><Link to="/termos">Termos de Uso</Link></li>
+              <li><Link to="/privacidade">Política de Privacidade</Link></li>
+              <li><Link to="/reembolso">Política de Reembolso</Link></li>
+            </ul>
+          </div>
 
           {/* Coluna 3: Suporte */}
           <div className="footer-column">
             <h4>Suporte</h4>
             <ul className="footer-links">
+              {/* Você pode substituir o '#' pelo seu link de contato real depois */}
               <li><a href="#">Contato</a></li>
               <li><Link to="/register">Criar Conta</Link></li>
               <li><Link to="/login">Acessar Plataforma</Link></li>
