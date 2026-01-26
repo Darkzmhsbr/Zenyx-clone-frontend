@@ -39,16 +39,20 @@ export function Funil() {
       const statsData = await crmService.getFunnelStats(botId);
       setStats(statsData);
       
+      // ✅ CORREÇÃO 1: Evitar duplicação no filtro "Todos"
       if (activeTab === 'todos') {
-        const pedidosData = await crmService.getContacts(botId, 'todos', currentPage, perPage);
-        const leadsData = await crmService.getLeads(botId, currentPage, perPage);
+        // Busca APENAS getContacts('todos') que já faz o merge correto entre leads e pedidos
+        const contactsData = await crmService.getContacts(botId, 'todos', currentPage, perPage);
         
-        setLeads(leadsData.data || []);
-        setContacts(pedidosData.data || []);
+        // Separa leads frios (sem pedido) dos demais
+        const allData = contactsData.data || [];
+        const leadsOnly = allData.filter(c => c.origem === 'lead'); // Apenas leads puros
+        const pedidosOnly = allData.filter(c => c.origem === 'pedido'); // Pedidos (inclui ex-leads que viraram clientes)
         
-        const totalCombinado = (leadsData.total || 0) + (pedidosData.total || 0);
-        setTotalContacts(totalCombinado);
-        setTotalPages(Math.ceil(totalCombinado / perPage));
+        setLeads(leadsOnly);
+        setContacts(pedidosOnly);
+        setTotalContacts(contactsData.total || 0);
+        setTotalPages(contactsData.total_pages || 1);
         
       } else if (activeTab === 'topo') {
         const leadsData = await crmService.getLeads(botId, currentPage, perPage);
@@ -291,11 +295,11 @@ export function Funil() {
                     {/* LEADS */}
                     {leads.map((lead) => (
                       <tr key={`lead-${lead.id}`}>
-                        <td>{lead.nome || 'Sem nome'}</td>
+                        <td>{lead.first_name || lead.nome || 'Sem nome'}</td>
                         <td>@{lead.username || 'N/A'}</td>
                         <td>-</td>
                         <td>-</td>
-                        <td>{formatDate(lead.primeiro_contato)}</td>
+                        <td>{formatDate(lead.created_at)}</td>
                         <td>
                           <span className="status-badge" style={{ 
                             background: 'rgba(59, 130, 246, 0.1)', 
