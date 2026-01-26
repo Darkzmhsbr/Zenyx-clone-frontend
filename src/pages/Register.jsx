@@ -28,7 +28,7 @@ export function Register() {
     const renderWidget = () => {
       if (window.turnstile && turnstileRef.current) {
         window.turnstile.render(turnstileRef.current, {
-          sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SUA SITE KEY
+          sitekey: import.meta.env.VITE_TURNSTILE_SITEKEY,
           callback: (token) => {
             setTurnstileToken(token);
           },

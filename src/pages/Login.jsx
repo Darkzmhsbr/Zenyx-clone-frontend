@@ -25,7 +25,7 @@ export function Login() {
 
         try {
           const id = window.turnstile.render(turnstileRef.current, {
-            sitekey: '0x4AAAAAACOaNAV9wTIXZkZy', // 🔑 SUA CHAVE PÚBLICA
+            sitekey: import.meta.env.VITE_TURNSTILE_SITEKEY,
             theme: 'dark', // Para combinar com seu site
             callback: (token) => {
               console.log('✅ Captcha resolvido:', token);

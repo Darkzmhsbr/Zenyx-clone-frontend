@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 🔗 SEU DOMÍNIO DO RAILWAY
-const API_URL = 'https://zenyx-gbs-testesv1-production.up.railway.app';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_URL,
