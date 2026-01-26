@@ -24,15 +24,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Coluna 2: Legal */}
-          <div className="footer-column">
-            <h4>Legal</h4>
-            <ul className="footer-links">
-              <li><a href="#">Termos de Uso</a></li>
-              <li><a href="#">Política de Privacidade</a></li>
-              <li><a href="#">Política de Reembolso</a></li>
-            </ul>
-          </div>
+          {/*
 
           {/* Coluna 3: Suporte */}
           <div className="footer-column">
