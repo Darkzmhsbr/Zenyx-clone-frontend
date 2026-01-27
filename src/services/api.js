@@ -109,7 +109,6 @@ export const botService = {
   toggleBot: async (botId) => (await api.post(`/api/admin/bots/${botId}/toggle`)).data,
   deleteBot: async (botId) => (await api.delete(`/api/admin/bots/${botId}`)).data,
   getStats: async (botId, start, end) => (await api.get(`/api/admin/dashboard/stats?bot_id=${botId}&start_date=${start}&end_date=${end}`)).data,
-  buscarPlanos: async (botId) => (await api.get(`/api/admin/bots/${botId}/plans`)).data,
 };
 
 // ============================================================
@@ -154,7 +153,7 @@ export const orderBumpService = {
 };
 
 // ============================================================
-// 📢 SERVIÇO DE REMARKETING MANUAL
+// 📢 SERVIÇO DE REMARKETING
 // ============================================================
 export const remarketingService = {
   send: async (botId, data, isTest = false, specificUserId = null) => {
@@ -643,74 +642,6 @@ export const superAdminService = {
   },
 };
 
-// ============================================================
-// 🎯 SERVIÇO DE REMARKETING AUTOMÁTICO (NOVO)
-// ============================================================
-export const remarketingAutoService = {
-  // =========================================================
-  // GET: Buscar configuração de disparo automático
-  // =========================================================
-  getRemarketingConfig: async (botId) => {
-    try {
-      const response = await api.get(`/api/bots/${botId}/remarketing`);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar config de remarketing:', error);
-      throw error;
-    }
-  },
 
-  // =========================================================
-  // POST: Salvar configuração de disparo automático
-  // =========================================================
-  saveRemarketingConfig: async (botId, data) => {
-    try {
-      const response = await api.post(`/api/bots/${botId}/remarketing`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao salvar config de remarketing:', error);
-      throw error;
-    }
-  },
-
-  // =========================================================
-  // GET: Buscar configuração de mensagens alternantes
-  // =========================================================
-  getAlternatingMessages: async (botId) => {
-    try {
-      const response = await api.get(`/api/bots/${botId}/alternating-messages`);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar mensagens alternantes:', error);
-      throw error;
-    }
-  },
-
-  // =========================================================
-  // POST: Salvar configuração de mensagens alternantes
-  // =========================================================
-  saveAlternatingMessages: async (botId, data) => {
-    try {
-      const response = await api.post(`/api/bots/${botId}/alternating-messages`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao salvar mensagens alternantes:', error);
-      throw error;
-    }
-  },
-
-  // =========================================================
-  // GET: Buscar estatísticas de remarketing
-  // =========================================================
-  getRemarketingStats: async (botId) => {
-    try {
-      const response = await api.get(`/api/bots/${botId}/remarketing/stats`);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar stats de remarketing:', error);
-      throw error;
-    }
-  }
-};
 
 export default api;
