@@ -196,6 +196,60 @@ export const remarketingService = {
 };
 
 // ============================================================
+// 🚀 SERVIÇO DE DISPARO AUTOMÁTICO (NOVO)
+// ============================================================
+export const remarketingAutoService = {
+  // Busca as configurações principais (Aba 1)
+  getRemarketingConfig: async (botId) => {
+    try {
+      const response = await api.get(`/api/admin/auto-remarketing/${botId}`);
+      return response.data;
+    } catch (error) {
+      console.warn("Configuração auto não encontrada, retornando padrão.");
+      return null;
+    }
+  },
+
+  // Salva as configurações principais (Aba 1)
+  saveRemarketingConfig: async (botId, data) => {
+    const response = await api.post(`/api/admin/auto-remarketing/${botId}`, data);
+    return response.data;
+  },
+
+  // Busca as mensagens alternantes (Aba 2)
+  getAlternatingMessages: async (botId) => {
+    try {
+      const response = await api.get(`/api/admin/auto-remarketing/${botId}/messages`);
+      return response.data;
+    } catch (error) {
+      return [];
+    }
+  },
+
+  // Salva as mensagens alternantes (Aba 2)
+  saveAlternatingMessages: async (botId, data) => {
+    const response = await api.post(`/api/admin/auto-remarketing/${botId}/messages`, data);
+    return response.data;
+  },
+
+  // Busca estatísticas (Aba 3)
+  getRemarketingStats: async (botId) => {
+    try {
+      const response = await api.get(`/api/admin/auto-remarketing/${botId}/stats`);
+      return response.data;
+    } catch (error) {
+      return { sent: 0, conversions: 0, rate: 0 };
+    }
+  },
+
+  // Ativa/Desativa o sistema
+  toggle: async (botId) => {
+    const response = await api.post(`/api/admin/auto-remarketing/${botId}/toggle`);
+    return response.data;
+  }
+};
+
+// ============================================================
 // 👥 CRM / CONTATOS
 // ============================================================
 export const crmService = {
@@ -641,7 +695,5 @@ export const superAdminService = {
     }
   },
 };
-
-
 
 export default api;

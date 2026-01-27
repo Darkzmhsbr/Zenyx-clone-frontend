@@ -22,20 +22,16 @@ import {
   ShoppingBag,
   User, 
   Target,
-  Crown // 👑 Ícone do Super Admin
+  Crown, // 👑 Ícone do Super Admin
+  Send // 🚀 Ícone do Disparo Automático
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
-
-// -------------------------------------------------------
-// ARQUIVO CORRIGIDO: TEXTOS E ROTAS SINCRONIZADOS
-// -------------------------------------------------------
 
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Adicionado 'user' para verificar permissão e 'hasBot' para trava
   const { user, logout, hasBot } = useAuth();
   
   const currentPath = location.pathname;
@@ -48,18 +44,15 @@ export function Sidebar({ isOpen, onClose }) {
   const handleLogout = () => {
     if (onClose) onClose();
     logout();
-    // Força redirecionamento limpo
     window.location.href = '/login';
   };
 
-  // Função auxiliar para verificar se le link está ativo
   const isActive = (path) => {
     return currentPath === path ? 'active' : '';
   };
 
   return (
     <>
-      {/* Overlay para fechar ao clicar fora (Mobile) */}
       <div 
         className={`sidebar-overlay ${isOpen ? 'open' : ''}`} 
         onClick={onClose}
@@ -67,7 +60,6 @@ export function Sidebar({ isOpen, onClose }) {
 
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          {/* Logo ou Título */}
           <div className="logo-area" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ 
               width: '32px', 
@@ -82,7 +74,9 @@ export function Sidebar({ isOpen, onClose }) {
             }}>
               Z
             </div>
-            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>Zenyx<span style={{color: '#c333ff'}}>GBOT</span></span>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>
+              Zenyx<span style={{color: '#c333ff'}}>GBOT</span>
+            </span>
           </div>
 
           <button className="close-sidebar-btn" onClick={onClose}>
@@ -110,7 +104,6 @@ export function Sidebar({ isOpen, onClose }) {
           )}
 
           {/* MENU GERAL */}
-          {/* 🛠️ CORREÇÃO: Sincronizado com a rota /dashboard + Trava Onboarding */}
           <Link 
             to={hasBot ? "/dashboard" : "#"} 
             className={`nav-item ${isActive('/dashboard')} ${!hasBot ? 'locked-nav' : ''}`} 
@@ -141,7 +134,7 @@ export function Sidebar({ isOpen, onClose }) {
             <span>Contatos (Leads)</span>
           </Link>
 
-         {/* === GRUPO: MEUS BOTS === */}
+          {/* === GRUPO: MEUS BOTS === */}
           <div className="nav-group">
             <div 
               className={`nav-item group-header ${isBotMenuOpen ? 'open' : ''}`}
@@ -164,7 +157,6 @@ export function Sidebar({ isOpen, onClose }) {
                 >
                   <Zap size={18} /> <span>Gerenciar Bots</span>
                 </Link>
-                {/* ✅ ROTA CORRETA: /bots/new (Sempre liberada para o Onboarding) */}
                 <Link to="/bots/new" className={`nav-item ${isActive('/bots/new')}`} onClick={onClose}>
                   <PlusCircle size={18} /> <span>Novo Bot</span>
                 </Link>
@@ -217,7 +209,7 @@ export function Sidebar({ isOpen, onClose }) {
             )}
           </div>
 
-          {/* SUBMENU: EXTRAS */}
+          {/* SUBMENU: EXTRAS - 🆕 COM DISPARO AUTOMÁTICO */}
           <div className="nav-group" style={!hasBot ? { opacity: 0.5 } : {}}>
             <div 
               className={`nav-item-header ${isExtrasMenuOpen ? 'open' : ''}`} 
@@ -232,7 +224,6 @@ export function Sidebar({ isOpen, onClose }) {
 
             {hasBot && isExtrasMenuOpen && (
               <div className="nav-subitems">
-                {/* 🔥 ATUALIZAÇÃO: Rota sincronizada com App.jsx */}
                 <Link to="/tutorial" className={`nav-item ${isActive('/tutorial')}`} onClick={onClose}>
                   <BookOpen size={18} /> <span>Tutoriais</span>
                 </Link>
@@ -249,9 +240,17 @@ export function Sidebar({ isOpen, onClose }) {
                   <Unlock size={18} /> <span>Canal Free</span>
                 </Link>
 
-                {/* RASTREAMENTO DENTRO DE EXTRAS */}
                 <Link to="/rastreamento" className={`nav-item ${isActive('/rastreamento')}`} onClick={onClose}>
                   <Target size={18} /> <span>Rastreamento</span>
+                </Link>
+
+                {/* 🆕 NOVA ROTA: DISPARO AUTOMÁTICO */}
+                <Link 
+                  to="/extras/auto-remarketing" 
+                  className={`nav-item ${isActive('/extras/auto-remarketing')}`} 
+                  onClick={onClose}
+                >
+                  <Send size={18} /> <span>Disparo Automático</span>
                 </Link>
               </div>
             )}
@@ -259,7 +258,6 @@ export function Sidebar({ isOpen, onClose }) {
           
           <div className="divider"></div>
 
-          {/* ✅ CORREÇÃO: Texto "Integrações" corrigido de encoding */}
           <Link 
             to={hasBot ? "/integracoes" : "#"} 
             className={`nav-item ${isActive('/integracoes')} ${!hasBot ? 'locked-nav' : ''}`} 

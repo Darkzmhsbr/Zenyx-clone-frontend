@@ -4,16 +4,17 @@ import { BotProvider } from './context/BotContext';
 import { AuthProvider } from './context/AuthContext';
 import { MainLayout } from './layout/MainLayout';
 
-// ✅ IMPORTAÇÃO NOMEADA CORRETA
+// Autenticação e Landing
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { LandingPage } from './pages/LandingPage'; 
 
-// ⚖️ NOVAS PÁGINAS LEGAIS
+// Páginas Legais
 import { Terms } from './pages/Terms';
 import { Privacy } from './pages/Privacy';
 import { Refund } from './pages/Refund';
 
+// Páginas Principais
 import { Dashboard } from './pages/Dashboard';
 import { Contacts } from './pages/Contacts';
 import { Funil } from './pages/Funil';
@@ -28,12 +29,15 @@ import { AdminManager } from './pages/AdminManager';
 import { OrderBump } from './pages/OrderBump';
 import { Profile } from './pages/Profile';
 import { Tracking } from './pages/Tracking';
-import { AuditLogs } from './pages/AuditLogs'; // FASE 3.3
-import { SuperAdmin } from './pages/SuperAdmin'; // 👑 FASE 3.4
-import { SuperAdminUsers } from './pages/SuperAdminUsers'; // 👑 FASE 3.4
-import { Tutorial } from './pages/Tutorial'; // 🔥 IMPORTAÇÃO DA NOVA PÁGINA
+import { AuditLogs } from './pages/AuditLogs';
+import { SuperAdmin } from './pages/SuperAdmin';
+import { SuperAdminUsers } from './pages/SuperAdminUsers';
+import { Tutorial } from './pages/Tutorial';
 
-// 🔥 IMPORTANDO A LOJA REAL
+// 🆕 NOVA PÁGINA: Disparo Automático
+import { AutoRemarketing } from './pages/Autoremarketing';
+
+// Mini App (Loja)
 import { MiniAppHome } from './pages/miniapp/MiniAppHome';
 import { MiniAppCategory } from './pages/miniapp/MiniAppCategory';
 import { MiniAppCheckout } from './pages/miniapp/MiniAppCheckout';
@@ -55,10 +59,8 @@ const PlaceholderPage = ({ title }) => (
 );
 
 function App() {
-  // 🔥 LÓGICA DE CAPTURA GLOBAL (IGUAL AO SEU OUTRO PROJETO)
-  // Isso roda uma vez quando o app abre e garante que o usuário seja identificado
+  // Captura global de usuário Telegram
   useEffect(() => {
-    // Verifica se o script do Telegram já carregou ou injeta se necessário (fallback)
     if (!window.Telegram) {
         const script = document.createElement('script');
         script.src = "https://telegram.org/js/telegram-web-app.js";
@@ -78,28 +80,25 @@ function App() {
             if (user) {
                 console.log("✅ [App.js] Cliente Telegram Detectado:", user.first_name);
                 
-                // 💾 SALVA NO LOCALSTORAGE (A Chave do Sucesso)
                 localStorage.setItem('telegram_user_id', user.id);
                 localStorage.setItem('telegram_user_first_name', user.first_name);
                 
                 if (user.username) {
                     localStorage.setItem('telegram_username', user.username);
                 } else {
-                    localStorage.removeItem('telegram_username'); // Limpa se não tiver
+                    localStorage.removeItem('telegram_username');
                 }
                 
-                // Aplica cores do tema
                 try {
                     document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
                     document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
                 } catch (e) {}
                 
-                clearInterval(checkTelegram); // Para de verificar assim que achar
+                clearInterval(checkTelegram);
             }
         }
-    }, 200); // Verifica a cada 200ms
+    }, 200);
 
-    // Para de tentar depois de 5 segundos para não ficar rodando pra sempre
     setTimeout(() => clearInterval(checkTelegram), 5000);
 
     return () => clearInterval(checkTelegram);
@@ -110,20 +109,20 @@ function App() {
       <BotProvider>
         <Router>
           <Routes>
-            {/* 🆕 ROTA DA LANDING PAGE NA RAIZ */}
+            {/* Rota Pública: Landing Page */}
             <Route path="/" element={<LandingPage />} />
             
-            {/* ⚖️ ROTAS DE DOCUMENTOS LEGAIS (Públicas) */}
+            {/* Documentos Legais */}
             <Route path="/termos" element={<Terms />} />
             <Route path="/privacidade" element={<Privacy />} />
             <Route path="/reembolso" element={<Refund />} />
 
-            {/* Rotas de Autenticação */}
+            {/* Autenticação */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/logout" element={<Logout />} />
             
-            {/* 🔥 ROTAS PÚBLICAS DA LOJA (MINI APP) */}
+            {/* Loja Pública (Mini App) */}
             <Route path="/loja/:botId" element={<MiniAppHome />} />
             <Route path="/loja/:botId/categoria/:slug" element={<MiniAppCategory />} />
             <Route path="/loja/:botId/checkout" element={<MiniAppCheckout />} />
@@ -148,26 +147,30 @@ function App() {
               <Route path="/rastreamento" element={<Tracking />} />
               <Route path="/perfil" element={<Profile />} />
               
-              {/* FASE 3.3: ROTA DE AUDIT LOGS */}
+              {/* Audit Logs */}
               <Route path="/audit-logs" element={<AuditLogs />} />
               
-              {/* 👑 FASE 3.4: ROTAS SUPER ADMIN */}
+              {/* Super Admin */}
               <Route path="/superadmin" element={<SuperAdmin />} />
               <Route path="/superadmin/users" element={<SuperAdminUsers />} />
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
               
-              {/* 🔥 ROTA DE TUTORIAIS ATUALIZADA */}
+              {/* Tutoriais */}
               <Route path="/tutorial" element={<Tutorial />} />
               <Route path="/tutoriais" element={<Tutorial />} />
               
+              {/* Funções Extras */}
               <Route path="/funcoes" element={<PlaceholderPage title="Funções Extras" />} />
               <Route path="/funcoes/admins" element={<AdminManager />} />
               <Route path="/funcoes/grupos" element={<PlaceholderPage title="Grupos e Canais" />} />
               <Route path="/funcoes/free" element={<PlaceholderPage title="Canal Free" />} />
+              
+              {/* 🆕 NOVA ROTA: DISPARO AUTOMÁTICO */}
+              <Route path="/extras/auto-remarketing" element={<AutoRemarketing />} />
             </Route>
 
-            {/* Qualquer outra rota não encontrada redireciona para landing page */}
+            {/* Rota não encontrada */}
             <Route path="*" element={<Navigate to="/" replace />} />
 
           </Routes>
