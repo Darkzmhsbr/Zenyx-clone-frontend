@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { 
-  Plus, Trash2, Calendar, DollarSign, Edit2, Check, X, Tag 
+  Plus, Trash2, Calendar, DollarSign, Edit2, Check, X, Tag, Infinity 
 } from 'lucide-react';
 import { planService } from '../services/api';
 import { useBot } from '../context/BotContext'; 
@@ -18,8 +18,9 @@ export function Plans() {
   // Estado para criação
   const [newPlan, setNewPlan] = useState({ 
     nome_exibicao: '', 
-    preco_atual: '', // Corrigido nome do campo
-    dias_duracao: '' 
+    preco_atual: '',
+    dias_duracao: '',
+    is_lifetime: false  // ← NOVO CAMPO
   });
 
   // Estado para edição (Modal)
@@ -45,22 +46,27 @@ export function Plans() {
     }
   };
 
-  // 🔥 CORREÇÃO 1: Enviar selectedBot.id, não o objeto selectedBot
   const handleCreate = async () => {
-    if (!newPlan.nome_exibicao || !newPlan.preco_atual || !newPlan.dias_duracao) {
-      return Swal.fire('Atenção', 'Preencha todos os campos', 'warning');
+    // Validação: Se não for vitalício, exigir dias_duracao
+    if (!newPlan.nome_exibicao || !newPlan.preco_atual) {
+      return Swal.fire('Atenção', 'Preencha o nome e o preço', 'warning');
+    }
+    
+    if (!newPlan.is_lifetime && !newPlan.dias_duracao) {
+      return Swal.fire('Atenção', 'Planos temporários precisam ter duração em dias', 'warning');
     }
 
     try {
       setLoading(true);
       await planService.createPlan(selectedBot.id, {
-        ...newPlan,
+        nome_exibicao: newPlan.nome_exibicao,
         preco_atual: parseFloat(newPlan.preco_atual),
-        dias_duracao: parseInt(newPlan.dias_duracao)
+        dias_duracao: newPlan.is_lifetime ? 9999 : parseInt(newPlan.dias_duracao),  // Se vitalício, valor simbólico
+        is_lifetime: newPlan.is_lifetime  // ← ENVIA PARA BACKEND
       });
       
       Swal.fire('Sucesso', 'Plano criado!', 'success');
-      setNewPlan({ nome_exibicao: '', preco_atual: '', dias_duracao: '' });
+      setNewPlan({ nome_exibicao: '', preco_atual: '', dias_duracao: '', is_lifetime: false });
       carregarPlanos();
     } catch (error) {
       Swal.fire('Erro', 'Não foi possível criar o plano', 'error');
@@ -70,22 +76,31 @@ export function Plans() {
   };
 
   const openEditModal = (plan) => {
-    setEditingPlan({ ...plan });
+    setEditingPlan({ 
+      ...plan,
+      is_lifetime: plan.is_lifetime || false  // Garante que sempre tenha valor
+    });
     setIsEditModalOpen(true);
   };
 
-  // 🔥 CORREÇÃO 2: Enviar 3 argumentos: (BotID, PlanoID, Dados)
   const handleUpdate = async () => {
     if (!editingPlan) return;
+    
+    // Validação
+    if (!editingPlan.is_lifetime && !editingPlan.dias_duracao) {
+      return Swal.fire('Atenção', 'Planos temporários precisam ter duração', 'warning');
+    }
+    
     try {
       await planService.updatePlan(
-          selectedBot.id,      // Argumento 1: ID do Bot
-          editingPlan.id,      // Argumento 2: ID do Plano
-          {                    // Argumento 3: Dados
+          selectedBot.id,
+          editingPlan.id,
+          {
             nome_exibicao: editingPlan.nome_exibicao,
             preco_atual: parseFloat(editingPlan.preco_atual),
-            dias_duracao: parseInt(editingPlan.dias_duracao),
-            descricao: editingPlan.descricao || ""
+            dias_duracao: editingPlan.is_lifetime ? 9999 : parseInt(editingPlan.dias_duracao),
+            descricao: editingPlan.descricao || "",
+            is_lifetime: editingPlan.is_lifetime  // ← ENVIA PARA BACKEND
           }
       );
       
@@ -99,7 +114,6 @@ export function Plans() {
     }
   };
 
-  // 🔥 CORREÇÃO 3: Enviar BotID e PlanoID
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: 'Tem certeza?',
@@ -146,12 +160,30 @@ export function Plans() {
                   onChange={e => setNewPlan({...newPlan, preco_atual: e.target.value})}
                   icon={<DollarSign size={18}/>}
                 />
-                <Input 
-                  placeholder="Duração (dias)" type="number"
-                  value={newPlan.dias_duracao}
-                  onChange={e => setNewPlan({...newPlan, dias_duracao: e.target.value})}
-                  icon={<Calendar size={18}/>}
-                />
+                
+                {/* ← NOVO BLOCO: Toggle Vitalício */}
+                <div className="form-group-inline">
+                  <label className="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      checked={newPlan.is_lifetime}
+                      onChange={e => setNewPlan({...newPlan, is_lifetime: e.target.checked})}
+                    />
+                    <Infinity size={18} style={{marginLeft: 8, marginRight: 4}} />
+                    <span>Acesso Vitalício</span>
+                  </label>
+                </div>
+                
+                {/* Só mostra campo de dias se NÃO for vitalício */}
+                {!newPlan.is_lifetime && (
+                  <Input 
+                    placeholder="Duração (dias)" type="number"
+                    value={newPlan.dias_duracao}
+                    onChange={e => setNewPlan({...newPlan, dias_duracao: e.target.value})}
+                    icon={<Calendar size={18}/>}
+                  />
+                )}
+                
                 <Button onClick={handleCreate} disabled={loading}>
                   <Plus size={20} /> Criar
                 </Button>
@@ -165,7 +197,14 @@ export function Plans() {
               <Card key={plan.id} className="plan-card">
                 <CardContent>
                   <div className="plan-header">
-                    <h4>{plan.nome_exibicao}</h4>
+                    <h4>
+                      {plan.nome_exibicao}
+                      {plan.is_lifetime && (
+                        <span style={{marginLeft: 8, color: '#10b981'}}>
+                          <Infinity size={16} style={{verticalAlign: 'middle'}} />
+                        </span>
+                      )}
+                    </h4>
                     <div className="plan-actions">
                       <button className="btn-icon edit" onClick={() => openEditModal(plan)}>
                         <Edit2 size={18} />
@@ -177,7 +216,12 @@ export function Plans() {
                   </div>
                   <div className="plan-details">
                     <p><strong>R$ {parseFloat(plan.preco_atual).toFixed(2)}</strong></p>
-                    <p>{plan.dias_duracao} dias de acesso</p>
+                    <p>
+                      {plan.is_lifetime 
+                        ? '♾️ Acesso Vitalício' 
+                        : `${plan.dias_duracao} dias de acesso`
+                      }
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -199,20 +243,36 @@ export function Plans() {
                     value={editingPlan.nome_exibicao}
                     onChange={e => setEditingPlan({...editingPlan, nome_exibicao: e.target.value})}
                   />
-                  <div className="modal-row">
-                     <Input 
-                      label="Preço (R$)" type="number"
-                      value={editingPlan.preco_atual}
-                      onChange={e => setEditingPlan({...editingPlan, preco_atual: e.target.value})}
-                      icon={<DollarSign size={16}/>}
-                    />
+                  
+                  <Input 
+                    label="Preço (R$)" type="number"
+                    value={editingPlan.preco_atual}
+                    onChange={e => setEditingPlan({...editingPlan, preco_atual: e.target.value})}
+                    icon={<DollarSign size={16}/>}
+                  />
+                  
+                  {/* ← NOVO BLOCO: Toggle Vitalício no Modal */}
+                  <div className="form-group" style={{marginTop: 16}}>
+                    <label className="checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        checked={editingPlan.is_lifetime}
+                        onChange={e => setEditingPlan({...editingPlan, is_lifetime: e.target.checked})}
+                      />
+                      <Infinity size={18} style={{marginLeft: 8, marginRight: 4}} />
+                      <span>Acesso Vitalício</span>
+                    </label>
+                  </div>
+                  
+                  {/* Só mostra campo de dias se NÃO for vitalício */}
+                  {!editingPlan.is_lifetime && (
                     <Input 
                       label="Duração (Dias)" type="number"
                       value={editingPlan.dias_duracao}
                       onChange={e => setEditingPlan({...editingPlan, dias_duracao: e.target.value})}
                       icon={<Calendar size={16}/>}
                     />
-                  </div>
+                  )}
                 </div>
 
                 <div className="modal-footer">
