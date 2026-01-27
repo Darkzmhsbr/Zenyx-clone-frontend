@@ -39,7 +39,7 @@ import './Dashboard.css';
 
 registerLocale('pt-BR', ptBR);
 
-const Dashboard = () => {
+export const Dashboard = () => {
   const navigate = useNavigate();
   const { user, onboarding } = useAuth();
   const { selectedBot } = useBot();
@@ -472,5 +472,3 @@ const Dashboard = () => {
     </div>
   );
 };
-
-export default Dashboard;
