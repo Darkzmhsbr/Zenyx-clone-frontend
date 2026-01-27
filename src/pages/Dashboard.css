@@ -1,766 +1,321 @@
-/* =========================================
-   DASHBOARD.CSS - Premium SaaS Dashboard
-   Design System Variables + Layout + Components
-   ========================================= */
-
-/* === Design System Variables === */
-:root {
-  /* Core Colors */
-  --dashboard-bg: #0a0a0f;
-  --card: #12121a;
-  --card-hover: #16161f;
-  --card-border: rgba(255, 255, 255, 0.06);
-  --card-border-hover: rgba(255, 255, 255, 0.1);
-  
-  /* Text Colors */
-  --foreground: #fafafa;
-  --foreground-secondary: #e4e4e7;
-  --muted-foreground: #71717a;
-  --muted-foreground-light: #a1a1aa;
-  
-  /* Accent Colors */
-  --primary: #6366f1;
-  --primary-soft: rgba(99, 102, 241, 0.15);
-  --success: #22c55e;
-  --success-soft: rgba(34, 197, 94, 0.12);
-  --warning: #f59e0b;
-  --warning-soft: rgba(245, 158, 11, 0.12);
-  --info: #3b82f6;
-  --info-soft: rgba(59, 130, 246, 0.12);
-  --accent: #8b5cf6;
-  --accent-soft: rgba(139, 92, 246, 0.12);
-  --danger: #ef4444;
-  --danger-soft: rgba(239, 68, 68, 0.12);
-  
-  /* Chart Colors */
-  --chart-primary: #6366f1;
-  --chart-secondary: #8b5cf6;
-  --chart-grid: rgba(255, 255, 255, 0.04);
-  
-  /* Layout */
-  --header-height: 64px;
-  --sidebar-width: 260px;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-xs: 6px;
-  
-  /* Spacing */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 48px;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
-  
-  /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-base: 200ms ease;
-  --transition-slow: 300ms ease;
-}
-
-/* === Dashboard Container === */
 .dashboard-container {
-  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
   padding: var(--spacing-xl);
-  padding-top: var(--spacing-lg);
-  background: var(--dashboard-bg);
   max-width: 1600px;
   margin: 0 auto;
-}
-
-/* === Welcome Banner === */
-.welcome-banner {
-  margin-bottom: var(--spacing-xl);
-  animation: slideDown 0.4s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.welcome-banner-content {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(16, 185, 129, 0.06) 100%);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  border-radius: var(--radius);
-  padding: var(--spacing-lg);
-  position: relative;
-  overflow: hidden;
-}
-
-.welcome-banner-content::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.5), transparent);
-}
-
-.welcome-banner-header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-md);
-}
-
-.welcome-banner-icon {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--success-soft);
-  border-radius: var(--radius-sm);
-  color: var(--success);
-}
-
-.welcome-banner-text {
-  flex: 1;
-}
-
-.welcome-banner-text h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--foreground);
-  margin: 0 0 var(--spacing-xs);
-  letter-spacing: -0.02em;
-}
-
-.welcome-banner-text p {
-  font-size: 0.875rem;
-  color: var(--muted-foreground-light);
-  margin: 0;
-}
-
-.welcome-banner-close {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-xs);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.welcome-banner-close:hover {
-  background: rgba(255, 255, 255, 0.05);
+  margin-top: var(--header-height); 
+  margin-left: var(--sidebar-width);
   color: var(--foreground);
 }
 
-.welcome-banner-status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.status-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  font-size: 0.875rem;
-  color: var(--muted-foreground-light);
-}
-
-.status-icon {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--muted-foreground);
-}
-
-.status-icon.completed {
-  background: var(--success-soft);
-  color: var(--success);
-}
-
-/* === Dashboard Header === */
+/* --- 1. CABEÇALHO --- */
 .dashboard-header {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--spacing-md);
   flex-wrap: wrap;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+  gap: 1rem;
 }
 
-.dashboard-header-left {
-  display: flex;
-  flex-direction: column;
-}
-
-.dashboard-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.dashboard-title {
-  font-size: 1.75rem;
+.page-title {
+  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--foreground);
   margin: 0;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+  color: var(--foreground);
 }
 
-.dashboard-subtitle {
-  font-size: 0.9375rem;
+.highlight-text {
+  color: var(--primary); /* Roxo */
+}
+
+.page-subtitle {
   color: var(--muted-foreground);
-  margin: 0;
+  font-size: 0.9rem;
+  margin-top: 5px;
 }
 
-.dashboard-header-actions {
+.header-actions {
   display: flex;
+  gap: 10px;
   align-items: center;
-  gap: var(--spacing-sm);
 }
 
-.view-toggle-btn,
-.refresh-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: 10px 16px;
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
-  color: var(--foreground-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.view-toggle-btn:hover,
-.refresh-btn:hover {
-  background: var(--card-hover);
-  border-color: var(--card-border-hover);
-  color: var(--foreground);
-}
-
-.refresh-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* === Top Cards Section === */
-.top-cards-section {
-  margin-bottom: var(--spacing-xl);
-}
-
+/* --- 2. TOP CARDS GRID --- */
 .top-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
 }
 
-@media (max-width: 1024px) {
-  .top-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .top-cards-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* === Metric Card === */
-.metric-card {
-  background: var(--card);
+.analytic-card {
+  background-color: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  padding: var(--spacing-lg);
-  transition: all var(--transition-base);
-  position: relative;
-  overflow: hidden;
-}
-
-.metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-  opacity: 0;
-  transition: opacity var(--transition-base);
-}
-
-.metric-card:hover {
-  background: var(--card-hover);
-  border-color: var(--card-border-hover);
-  transform: translateY(-2px);
-}
-
-.metric-card:hover::before {
-  opacity: 1;
-}
-
-.metric-card-primary {
-  background: linear-gradient(135deg, var(--card) 0%, rgba(99, 102, 241, 0.08) 100%);
-  border-color: rgba(99, 102, 241, 0.15);
-}
-
-.metric-card-primary:hover {
-  border-color: rgba(99, 102, 241, 0.25);
-}
-
-.metric-card-header {
+  padding: 1.5rem;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-md);
+  flex-direction: column;
+  gap: 1rem;
+  transition: transform 0.2s, border-color 0.2s;
 }
 
-.metric-label {
-  font-size: 0.8125rem;
-  font-weight: 500;
+.analytic-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-label {
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--muted-foreground);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
 }
 
-.metric-icon-wrapper {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-soft);
-  border-radius: var(--radius-sm);
-  color: var(--primary);
+.card-icon-muted {
+  color: var(--muted-foreground);
+  opacity: 0.5;
 }
 
-.metric-icon-wrapper.accent {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.metric-icon-wrapper.success {
-  background: var(--success-soft);
-  color: var(--success);
-}
-
-.metric-icon-wrapper.warning {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
-
-.metric-icon-wrapper.info {
-  background: var(--info-soft);
-  color: var(--info);
-}
-
-.metric-value-large {
+.card-main-value {
   font-size: 2rem;
   font-weight: 700;
   color: var(--foreground);
-  letter-spacing: -0.03em;
-  line-height: 1;
-  margin-bottom: var(--spacing-sm);
 }
 
-.metric-trend {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: 0.8125rem;
-  color: var(--muted-foreground);
-}
-
-.metric-trend.positive {
-  color: var(--success);
-}
-
-.metric-trend.negative {
-  color: var(--danger);
-}
-
-.metric-footer {
-  padding-top: var(--spacing-sm);
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  margin-top: var(--spacing-sm);
-}
-
-.metric-footer-text {
-  font-size: 0.75rem;
-  color: var(--muted-foreground);
-}
-
-/* === Main Analytics Section === */
-.main-analytics-section {
-  margin-bottom: var(--spacing-xl);
-}
-
-.main-analytics-grid {
+/* --- 3. MAIN ANALYTIC GRID (Chart + Side Stats) --- */
+.main-analytic-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 2fr 1fr; /* Gráfico ocupa 2/3, Stats ocupa 1/3 */
   gap: var(--spacing-lg);
 }
 
-@media (max-width: 1200px) {
-  .main-analytics-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* === Chart Card === */
-.chart-card {
-  background: var(--card);
+/* Área do Gráfico */
+.card-box {
+  background-color: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  padding: var(--spacing-lg);
-  overflow: hidden;
+  padding: 1.5rem;
 }
 
-.chart-card-header {
+.chart-section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  min-height: 450px;
+}
+
+.chart-header {
+  display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: flex-start;
+  margin-bottom: 2rem;
 }
 
-.chart-header-left {
+.chart-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 1rem;
 }
 
-.chart-icon-wrapper {
-  width: 44px;
-  height: 44px;
+.icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(42, 33, 60, 0.5); /* Fundo escuro sutil */
+  border: 1px solid var(--card-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-soft);
-  border-radius: var(--radius-sm);
   color: var(--primary);
 }
 
-.chart-header-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
 .chart-label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--muted-foreground);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.chart-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--foreground);
-  letter-spacing: -0.02em;
-}
-
-.chart-header-right {
-  display: flex;
-  align-items: center;
-}
-
-.date-picker-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.date-picker-wrapper:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--card-border-hover);
-}
-
-.date-picker-icon {
-  color: var(--muted-foreground);
-  flex-shrink: 0;
-}
-
-.date-picker-chevron {
-  color: var(--muted-foreground);
-  flex-shrink: 0;
-}
-
-.date-picker-input {
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--foreground-secondary);
-  width: 180px;
-  cursor: pointer;
-}
-
-.date-picker-input::placeholder {
-  color: var(--muted-foreground);
-}
-
-.chart-container {
-  height: 280px;
-  margin: 0 -8px;
-}
-
-/* === Chart Tooltip === */
-.chart-tooltip {
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  box-shadow: var(--shadow-lg);
-}
-
-.chart-tooltip-label {
+  display: block;
   font-size: 0.75rem;
   color: var(--muted-foreground);
-  margin: 0 0 var(--spacing-xs);
+  margin-bottom: 4px;
 }
 
-.chart-tooltip-value {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--foreground);
-  margin: 0;
+.chart-big-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff; /* Destaque branco */
 }
 
-/* === Chart Skeleton === */
-.chart-skeleton {
-  height: 100%;
+.chart-big-number span {
+  color: var(--primary);
+}
+
+.chart-legend {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
   display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  padding: var(--spacing-lg);
-  gap: var(--spacing-md);
+  align-items: center;
+  gap: 6px;
 }
 
-.chart-skeleton-bar {
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--primary);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.chart-wrapper {
   flex: 1;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border-radius: var(--radius-xs);
-  animation: pulse 1.5s ease-in-out infinite;
+  width: 100%;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* === KPI Column === */
-.kpi-column {
+/* Coluna Direita (Side Stats) */
+.side-stats-column {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
 }
 
-@media (max-width: 1200px) {
-  .kpi-column {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+.side-stat-card {
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1; /* Faz todos terem altura igual/distribuída */
+}
+
+.side-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.side-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 1024px) {
+  .main-analytic-grid {
+    grid-template-columns: 1fr; /* Vira coluna única no mobile/tablet */
+  }
+  
+  .chart-section {
+    min-height: 350px;
   }
 }
 
 @media (max-width: 768px) {
-  .kpi-column {
-    grid-template-columns: repeat(2, 1fr);
+  .dashboard-container {
+    margin-left: 0;
+    padding: var(--spacing-md);
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .page-title {
+    font-size: 1.25rem;
   }
 }
 
-@media (max-width: 480px) {
-  .kpi-column {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* === KPI Card === */
-.kpi-card {
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
-  padding: var(--spacing-md) var(--spacing-lg);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  transition: all var(--transition-base);
-  flex: 1;
-}
-
-.kpi-card:hover {
-  background: var(--card-hover);
-  border-color: var(--card-border-hover);
-}
-
-.kpi-card-highlight {
-  background: linear-gradient(135deg, var(--card) 0%, rgba(34, 197, 94, 0.08) 100%);
-  border-color: rgba(34, 197, 94, 0.15);
-}
-
-.kpi-card-highlight:hover {
-  border-color: rgba(34, 197, 94, 0.25);
-}
-
-.kpi-icon-wrapper {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-soft);
-  border-radius: var(--radius-sm);
-  color: var(--primary);
-  flex-shrink: 0;
-}
-
-.kpi-icon-wrapper.accent {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.kpi-icon-wrapper.success {
-  background: var(--success-soft);
-  color: var(--success);
-}
-
-.kpi-icon-wrapper.warning {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
-
-.kpi-icon-wrapper.info {
-  background: var(--info-soft);
-  color: var(--info);
-}
-
-.kpi-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.kpi-label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--muted-foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.kpi-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--foreground);
-  letter-spacing: -0.02em;
-}
-
-/* === Skeleton Values === */
-.skeleton-value {
-  display: inline-block;
-  width: 80px;
-  height: 2rem;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius-xs);
-}
-
-.skeleton-value-sm {
-  display: inline-block;
-  width: 60px;
-  height: 1.25rem;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius-xs);
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-/* === Spin Animation === */
+/* Animação de Loading */
 .spin {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* === DatePicker Theme Override === */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   👇 NOVOS ESTILOS DO DATE PICKER (FILTRO DE DATA)
+   ============================================================ */
+
+/* Botão Personalizado que abre o Calendário */
+.date-filter-btn {
+  background-color: #0f0b14; /* Fundo bem escuro */
+  border: 1px solid var(--card-border);
+  color: var(--foreground);
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  min-width: 180px;
+  justify-content: space-between;
+}
+
+.date-filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.date-filter-btn svg {
+  opacity: 0.8;
+}
+
+/* --- CUSTOMIZAÇÃO DO CALENDÁRIO (DATEPICKER) PARA TEMA DARK --- */
 .react-datepicker {
-  background: var(--card) !important;
+  background-color: var(--card) !important;
   border: 1px solid var(--card-border) !important;
-  border-radius: var(--radius) !important;
+  color: var(--foreground) !important;
   font-family: inherit !important;
-  box-shadow: var(--shadow-lg) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  overflow: hidden;
 }
 
 .react-datepicker__header {
-  background: var(--card) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  padding-top: var(--spacing-md) !important;
+  background-color: var(--secondary) !important;
+  border-bottom: 1px solid var(--card-border) !important;
+  padding-top: 15px !important;
 }
 
-.react-datepicker__current-month,
-.react-datepicker__day-name {
+.react-datepicker__current-month {
   color: var(--foreground) !important;
+  margin-bottom: 10px;
+  text-transform: capitalize;
 }
 
 .react-datepicker__day-name {
@@ -768,109 +323,35 @@
 }
 
 .react-datepicker__day {
-  color: var(--foreground-secondary) !important;
-  border-radius: var(--radius-xs) !important;
+  color: var(--foreground) !important;
+  border-radius: 6px !important;
+  transition: background-color 0.2s;
 }
 
 .react-datepicker__day:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--primary) !important;
+  color: #fff !important;
 }
 
-.react-datepicker__day--selected,
-.react-datepicker__day--in-selecting-range,
+/* Dia Selecionado ou no Range */
+.react-datepicker__day--selected, 
 .react-datepicker__day--in-range {
-  background: var(--primary) !important;
-  color: white !important;
+  background-color: var(--primary) !important;
+  color: #fff !important;
 }
 
-.react-datepicker__day--keyboard-selected {
-  background: var(--primary-soft) !important;
-  color: var(--primary) !important;
+/* Intervalo entre datas */
+.react-datepicker__day--in-selecting-range {
+  background-color: rgba(195, 51, 255, 0.3) !important;
 }
 
-.react-datepicker__day--today {
-  font-weight: 700 !important;
-  color: var(--primary) !important;
-}
-
-.react-datepicker__day--outside-month {
-  color: var(--muted-foreground) !important;
-  opacity: 0.5;
-}
-
+/* Setas do calendário */
 .react-datepicker__navigation-icon::before {
   border-color: var(--muted-foreground) !important;
 }
 
-.react-datepicker__navigation:hover *::before {
-  border-color: var(--foreground) !important;
-}
-
-.react-datepicker__triangle {
-  display: none !important;
-}
-
-.react-datepicker-popper {
-  z-index: 100 !important;
-}
-
-/* === Responsive Adjustments === */
-@media (max-width: 768px) {
-  .dashboard-container {
-    padding: var(--spacing-md);
-  }
-
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .dashboard-title {
-    font-size: 1.5rem;
-  }
-
-  .metric-value-large {
-    font-size: 1.75rem;
-  }
-
-  .chart-card-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .date-picker-wrapper {
-    width: 100%;
-  }
-
-  .date-picker-input {
-    flex: 1;
-    width: auto;
-  }
-}
-
-/* === Focus States === */
-.view-toggle-btn:focus-visible,
-.refresh-btn:focus-visible,
-.welcome-banner-close:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* === Print Styles === */
-@media print {
-  .dashboard-container {
-    background: white;
-    color: black;
-  }
-
-  .metric-card,
-  .chart-card,
-  .kpi-card {
-    background: white;
-    border: 1px solid #e5e5e5;
-  }
-
-  .welcome-banner {
-    display: none;
-  }
+/* Hoje */
+.react-datepicker__day--today {
+  font-weight: bold;
+  border: 1px solid var(--primary);
 }
