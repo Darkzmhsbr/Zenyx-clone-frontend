@@ -18,7 +18,8 @@ const Icons = {
   Chart: '📊',
   Fire: '🔥',
   Money: '💰',
-  Star: '⭐'
+  Star: '⭐',
+  Bomb: '💣'
 };
 
 // Objetos padrão para evitar erros de inicialização
@@ -28,7 +29,9 @@ const DEFAULT_DISPARO = {
   media_url: '',
   media_type: null,
   delay_minutes: 5,
-  auto_destruct_seconds: 0,
+  auto_destruct_enabled: false,      // ✅ NOVO
+  auto_destruct_seconds: 3,          // ✅ NOVO
+  auto_destruct_after_click: true,   // ✅ NOVO
   promo_values: {} 
 };
 
@@ -202,13 +205,13 @@ export function AutoRemarketing() {
         delete newPromo[planoId];
       } else {
         const plano = planos.find(p => p.id === planoId);
-        // 🔥 CORREÇÃO: Usando preco_atual conforme database.py
-        const valorBase = plano && plano.preco_atual ? Number(plano.preco_atual) : 0;
-        
-        newPromo[planoId] = {
-          price: valorBase * 0.7,
-          button_text: `🔥 ${plano?.nome_exibicao || 'Plano'} - Oferta!`
-        };
+        if (plano) {
+          const valorOriginal = Number(plano.preco_atual) || 0;
+          newPromo[planoId] = {
+            price: valorOriginal * 0.7,
+            button_text: ''
+          };
+        }
       }
       
       return { ...prev, promo_values: newPromo };
@@ -216,16 +219,21 @@ export function AutoRemarketing() {
   }
   
   function handlePromoChange(planoId, field, value) {
-    setDisparoConfig(prev => ({
-      ...prev,
-      promo_values: {
-        ...(prev.promo_values || {}),
-        [planoId]: {
-          ...(prev.promo_values?.[planoId] || {}),
-          [field]: field === 'price' ? parseFloat(value) || 0 : value
+    setDisparoConfig(prev => {
+      const currentPromos = prev.promo_values || {};
+      const currentPlano = currentPromos[planoId] || {};
+      
+      return {
+        ...prev,
+        promo_values: {
+          ...currentPromos,
+          [planoId]: {
+            ...currentPlano,
+            [field]: field === 'price' ? parseFloat(value) || 0 : value
+          }
         }
-      }
-    }));
+      };
+    });
   }
   
   // =========================================================
@@ -233,13 +241,11 @@ export function AutoRemarketing() {
   // =========================================================
   
   function handleAddMessage() {
-    if (!newMessage.trim()) {
-      alert('Digite uma mensagem.');
-      return;
-    }
+    if (!newMessage.trim()) return;
+    
     setAlternatingConfig(prev => ({
       ...prev,
-      messages: [...(prev.messages || []), newMessage.trim()]
+      messages: [...(prev.messages || []), newMessage]
     }));
     setNewMessage('');
   }
@@ -251,11 +257,12 @@ export function AutoRemarketing() {
     }));
   }
   
-  function handleEditMessage(index, newText) {
-    setAlternatingConfig(prev => ({
-      ...prev,
-      messages: (prev.messages || []).map((msg, i) => i === index ? newText : msg)
-    }));
+  function handleEditMessage(index, value) {
+    setAlternatingConfig(prev => {
+      const updated = [...(prev.messages || [])];
+      updated[index] = value;
+      return { ...prev, messages: updated };
+    });
   }
   
   // =========================================================
@@ -266,8 +273,7 @@ export function AutoRemarketing() {
     return (
       <div className="auto-remarketing-container">
         <div className="alert alert-warning">
-          <span>{Icons.Alert}</span>
-          <p>Selecione um bot na barra lateral para começar.</p>
+          <span>{Icons.Alert}</span> Nenhum bot selecionado.
         </div>
       </div>
     );
@@ -286,39 +292,37 @@ export function AutoRemarketing() {
   
   return (
     <div className="auto-remarketing-container">
-      {/* Header */}
+      
+      {/* === HEADER === */}
       <div className="auto-remarketing-header">
         <div className="header-titles">
           <h1>{Icons.Rocket} Disparo Automático</h1>
-          <p>Configure disparos automáticos para recuperar vendas</p>
+          <p>Configure mensagens de remarketing inteligentes</p>
         </div>
-        
         <button 
-          className="btn-save-main"
+          className="btn-save-main" 
           onClick={activeTab === 'disparo' ? handleSaveDisparo : handleSaveAlternating}
-          disabled={saving || activeTab === 'analytics'}
+          disabled={saving}
         >
           <span>{Icons.Save}</span>
-          <span>{saving ? 'Salvando...' : 'Salvar Configurações'}</span>
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
         </button>
       </div>
       
-      {/* Tabs */}
+      {/* === TABS === */}
       <div className="auto-remarketing-tabs">
         <button 
           className={`tab-btn ${activeTab === 'disparo' ? 'active' : ''}`}
           onClick={() => setActiveTab('disparo')}
         >
-          <span>{Icons.Rocket}</span> Disparo Automático
+          <span>{Icons.Rocket}</span> Configuração Principal
         </button>
-        
         <button 
           className={`tab-btn ${activeTab === 'alternating' ? 'active' : ''}`}
           onClick={() => setActiveTab('alternating')}
         >
           <span>{Icons.Message}</span> Mensagens Alternantes
         </button>
-        
         <button 
           className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
           onClick={() => setActiveTab('analytics')}
@@ -327,13 +331,14 @@ export function AutoRemarketing() {
         </button>
       </div>
       
-      {/* Conteúdo */}
+      {/* === CONTEÚDO === */}
       <div className="auto-remarketing-content">
         
         {/* === ABA 1: DISPARO AUTOMÁTICO === */}
         {activeTab === 'disparo' && (
           <div className="tab-content">
             
+            {/* Toggle Principal */}
             <div className="config-card">
               <div className="toggle-wrapper">
                 <label>{Icons.Rocket} Ativar Disparo Automático</label>
@@ -349,66 +354,66 @@ export function AutoRemarketing() {
             
             {disparoConfig.is_active && (
               <>
+                {/* Mensagem */}
                 <div className="config-card">
-                  <label className="config-label">{Icons.Message} Mensagem de Remarketing</label>
-                  
+                  <label className="config-label">{Icons.Message} Mensagem de Oferta</label>
                   <div className="text-editor-toolbar">
-                    <button type="button" onClick={() => applyFormatting('bold')}><strong>B</strong></button>
-                    <button type="button" onClick={() => applyFormatting('italic')}><em>I</em></button>
-                    <button type="button" onClick={() => applyFormatting('underline')}><u>U</u></button>
-                    <button type="button" onClick={() => applyFormatting('strike')}><s>S</s></button>
-                    <button type="button" onClick={() => applyFormatting('spoiler')}>🚫</button>
-                    <button type="button" onClick={() => applyFormatting('code')}>{'</>'}</button>
-                    <button type="button" onClick={() => applyFormatting('link')}>🔗</button>
+                    <button type="button" onClick={() => applyFormatting('bold')} title="Negrito"><b>B</b></button>
+                    <button type="button" onClick={() => applyFormatting('italic')} title="Itálico"><i>I</i></button>
+                    <button type="button" onClick={() => applyFormatting('underline')} title="Sublinhado"><u>U</u></button>
+                    <button type="button" onClick={() => applyFormatting('strike')} title="Riscado"><s>S</s></button>
+                    <button type="button" onClick={() => applyFormatting('code')} title="Código">&lt;/&gt;</button>
+                    <button type="button" onClick={() => applyFormatting('link')} title="Link">🔗</button>
                   </div>
-                  
                   <textarea
                     id="disparo-message"
                     className="input-field textarea-large"
-                    rows={8}
+                    placeholder="Digite sua mensagem de remarketing aqui..."
                     value={disparoConfig.message_text || ''}
                     onChange={(e) => setDisparoConfig(prev => ({ ...prev, message_text: e.target.value }))}
-                    placeholder="Digite a mensagem..."
                   />
                   <div className="hint-text">
                     <span>{Icons.Alert}</span>
-                    <span>Use: {'{first_name}'}, {'{plano_original}'}, {'{valor_original}'}</span>
+                    Suporte a HTML: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;s&gt;, &lt;code&gt;, &lt;a&gt;
                   </div>
                 </div>
                 
+                {/* Mídia */}
                 <div className="config-card">
                   <label className="config-label">{Icons.Photo} Mídia (Opcional)</label>
                   <div className="form-row">
-                    <div className="form-group" style={{ flex: 2 }}>
+                    <div className="form-group">
+                      <label>URL da Mídia</label>
                       <input
                         type="url"
                         className="input-field"
+                        placeholder="https://exemplo.com/imagem.jpg"
                         value={disparoConfig.media_url || ''}
                         onChange={(e) => setDisparoConfig(prev => ({ ...prev, media_url: e.target.value }))}
-                        placeholder="URL da Imagem ou Vídeo"
                       />
                     </div>
-                    <div className="form-group" style={{ flex: 1 }}>
+                    <div className="form-group">
+                      <label>Tipo</label>
                       <select
                         className="input-field"
                         value={disparoConfig.media_type || ''}
                         onChange={(e) => setDisparoConfig(prev => ({ ...prev, media_type: e.target.value || null }))}
                       >
-                        <option value="">Sem mídia</option>
-                        <option value="photo">🖼️ Foto</option>
-                        <option value="video">🎥 Vídeo</option>
+                        <option value="">Nenhuma</option>
+                        <option value="photo">Foto</option>
+                        <option value="video">Vídeo</option>
                       </select>
                     </div>
                   </div>
                 </div>
                 
+                {/* Planos Promocionais */}
                 <div className="config-card">
-                  <label className="config-label">{Icons.Money} Ofertas nos Planos</label>
-                  
+                  <label className="config-label">{Icons.Money} Valores Promocionais</label>
                   {planos.length === 0 ? (
-                    <div className="alert alert-warning">
+                    <div className="alert alert-info">
                       <span>{Icons.Alert}</span>
-                      <p>Nenhum plano cadastrado.</p>
+                      Nenhum plano cadastrado ainda.
                     </div>
                   ) : (
                     <div className="planos-grid">
@@ -473,30 +478,104 @@ export function AutoRemarketing() {
                   )}
                 </div>
                 
+                {/* Tempo de Espera */}
                 <div className="config-card">
                   <label className="config-label">{Icons.Clock} Tempo de Espera</label>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Aguardar (minutos)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="input-field"
-                        value={disparoConfig.delay_minutes || 5}
-                        onChange={(e) => setDisparoConfig(prev => ({ ...prev, delay_minutes: parseInt(e.target.value) || 1 }))}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Auto-destruir (segundos)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="input-field"
-                        value={disparoConfig.auto_destruct_seconds || 0}
-                        onChange={(e) => setDisparoConfig(prev => ({ ...prev, auto_destruct_seconds: parseInt(e.target.value) || 0 }))}
-                      />
+                  <div className="form-group">
+                    <label>Aguardar (minutos) antes de enviar o disparo</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1440"
+                      className="input-field"
+                      value={disparoConfig.delay_minutes || 5}
+                      onChange={(e) => setDisparoConfig(prev => ({ ...prev, delay_minutes: parseInt(e.target.value) || 1 }))}
+                    />
+                    <div className="hint-text">
+                      <span>{Icons.Alert}</span>
+                      Tempo entre o PIX inicial e o envio da oferta promocional (1-1440 minutos)
                     </div>
                   </div>
+                </div>
+
+                {/* ✅ NOVA SEÇÃO: AUTO-DESTRUIÇÃO OPCIONAL */}
+                <div className="config-card" style={{ borderLeft: '4px solid #c333ff', background: 'rgba(195, 51, 255, 0.03)' }}>
+                  <label className="config-label">{Icons.Bomb} Auto-Destruição da Mensagem</label>
+                  
+                  {/* Toggle para ativar auto-destruição */}
+                  <div className="toggle-wrapper" style={{ marginBottom: '20px' }}>
+                    <label>Ativar Auto-Destruição</label>
+                    <div 
+                      className={`custom-toggle ${disparoConfig.auto_destruct_enabled ? 'active' : ''}`}
+                      onClick={() => setDisparoConfig(prev => ({ ...prev, auto_destruct_enabled: !prev.auto_destruct_enabled }))}
+                    >
+                      <div className="toggle-handle"></div>
+                      <span className="toggle-label">{disparoConfig.auto_destruct_enabled ? 'ON' : 'OFF'}</span>
+                    </div>
+                  </div>
+
+                  <div className="hint-text" style={{ marginBottom: '20px' }}>
+                    <span>{Icons.Alert}</span>
+                    Quando ativado, a mensagem de disparo será automaticamente apagada após o tempo configurado
+                  </div>
+
+                  {/* Opções aparecem apenas se auto_destruct_enabled = true */}
+                  {disparoConfig.auto_destruct_enabled && (
+                    <>
+                      {/* Modo de auto-destruição */}
+                      <div className="form-group" style={{ marginBottom: '20px', paddingLeft: '20px', borderLeft: '2px solid #333' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer' }}>
+                          <input
+                            type="radio"
+                            name="destruct_mode"
+                            checked={disparoConfig.auto_destruct_after_click === true}
+                            onChange={() => setDisparoConfig(prev => ({ ...prev, auto_destruct_after_click: true }))}
+                            style={{ width: '18px', height: '18px' }}
+                          />
+                          <span>Destruir APÓS o usuário clicar no botão</span>
+                        </label>
+                        <div className="hint-text" style={{ marginLeft: '28px' }}>
+                          <span>✅</span>
+                          Recomendado: A mensagem só será apagada depois que o usuário escolher um plano
+                        </div>
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: '20px', paddingLeft: '20px', borderLeft: '2px solid #333' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer' }}>
+                          <input
+                            type="radio"
+                            name="destruct_mode"
+                            checked={disparoConfig.auto_destruct_after_click === false}
+                            onChange={() => setDisparoConfig(prev => ({ ...prev, auto_destruct_after_click: false }))}
+                            style={{ width: '18px', height: '18px' }}
+                          />
+                          <span>Destruir imediatamente após envio</span>
+                        </label>
+                        <div className="hint-text" style={{ marginLeft: '28px' }}>
+                          <span>⚠️</span>
+                          A mensagem será apagada automaticamente mesmo se o usuário não clicar
+                        </div>
+                      </div>
+
+                      {/* Tempo de auto-destruição */}
+                      <div className="form-group" style={{ paddingLeft: '20px', borderLeft: '2px solid #333' }}>
+                        <label>Tempo para auto-destruir (segundos)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="60"
+                          className="input-field"
+                          value={disparoConfig.auto_destruct_seconds || 3}
+                          onChange={(e) => setDisparoConfig(prev => ({ ...prev, auto_destruct_seconds: parseInt(e.target.value) || 3 }))}
+                          style={{ maxWidth: '200px' }}
+                        />
+                        <div className="hint-text">
+                          <span>{Icons.Clock}</span>
+                          Tempo de espera antes de apagar a mensagem (1-60 segundos)
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}
