@@ -16,75 +16,83 @@ export function Register() {
     fullName: ''
   });
   
-  // Adicionado estado para o token do Cloudflare
   const [turnstileToken, setTurnstileToken] = useState(''); 
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
   const { login } = useAuth();
   
-  // Refs para o widget (Igual ao Login.jsx)
   const turnstileRef = useRef(null);
   const widgetId = useRef(null); 
 
-  // 🛡️ Lógica Blindada do Cloudflare (Cópia fiel do Login.jsx que funciona)
+  // 🔍 DEBUG: Verificar se a chave está lendo
   useEffect(() => {
-    const initTurnstile = () => {
-      if (window.turnstile && turnstileRef.current) {
-        // Se já existir um widget, limpa antes de criar outro
+    const key = import.meta.env.VITE_TURNSTILE_SITEKEY;
+    console.log("🔑 [DEBUG] Chave Cloudflare lida:", key ? "OK (Inicia com " + key.substring(0,5) + ")" : "VAZIA/UNDEFINED");
+    if (!key) {
+        Swal.fire('Erro de Configuração', 'A Chave do Cloudflare (VITE_TURNSTILE_SITEKEY) não foi encontrada no .env', 'error');
+    }
+  }, []);
+
+  // 🛡️ Lógica de Renderização do Widget com Injeção de Script
+  useEffect(() => {
+    // Função para renderizar
+    const renderWidget = () => {
+        if (!turnstileRef.current) return;
+        
+        // Limpa anterior se existir
         if (widgetId.current) {
-            try {
-                window.turnstile.remove(widgetId.current);
-            } catch (e) {
-                console.warn("Widget cleanup error", e);
-            }
+            try { window.turnstile.remove(widgetId.current); } catch(e){}
         }
 
         try {
-          // Renderiza o widget
-          const id = window.turnstile.render(turnstileRef.current, {
-            sitekey: import.meta.env.VITE_TURNSTILE_SITEKEY,
-            theme: 'dark',
-            callback: (token) => {
-              console.log('✅ Token gerado:', token);
-              setTurnstileToken(token);
-            },
-            'expired-callback': () => {
-              setTurnstileToken('');
-            },
-            'error-callback': () => {
-              console.error('❌ Erro Cloudflare');
-              setTurnstileToken('');
-            }
-          });
-          widgetId.current = id;
-        } catch (error) {
-          console.error('Turnstile render error:', error);
+            console.log("🔄 [DEBUG] Tentando renderizar widget Cloudflare...");
+            const id = window.turnstile.render(turnstileRef.current, {
+                sitekey: import.meta.env.VITE_TURNSTILE_SITEKEY,
+                theme: 'dark',
+                callback: (token) => {
+                    console.log('✅ [DEBUG] Token capturado com sucesso:', token);
+                    setTurnstileToken(token);
+                },
+                'expired-callback': () => {
+                    console.warn('⚠️ [DEBUG] Token expirou');
+                    setTurnstileToken('');
+                },
+                'error-callback': () => {
+                    console.error('❌ [DEBUG] Erro interno do Cloudflare Widget');
+                    setTurnstileToken('');
+                }
+            });
+            widgetId.current = id;
+        } catch (err) {
+            console.error("❌ [DEBUG] Falha fatal ao renderizar widget:", err);
         }
-      }
     };
 
-    // Tenta iniciar imediatamente se o script já estiver carregado
-    if (window.turnstile) {
-        initTurnstile();
+    // Verifica se o script já existe ou precisa injetar
+    if (!window.turnstile) {
+        console.log("📥 [DEBUG] Script Cloudflare não detectado. Injetando...");
+        const script = document.createElement('script');
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+            console.log("📥 [DEBUG] Script carregado via Injeção.");
+            renderWidget();
+        };
+        document.body.appendChild(script);
     } else {
-        // Se não, aguarda um pouco (fallback)
-        const checkInterval = setInterval(() => {
-            if (window.turnstile) {
-                clearInterval(checkInterval);
-                initTurnstile();
-            }
-        }, 100);
+        // Se já existe, renderiza direto
+        console.log("⚡ [DEBUG] Script Cloudflare já existente. Renderizando...");
+        renderWidget();
     }
 
-    // Limpeza ao sair da página
+    // Cleanup
     return () => {
-      if (widgetId.current && window.turnstile) {
-        try {
-            window.turnstile.remove(widgetId.current);
-        } catch (e) {}
-        widgetId.current = null;
-      }
+        if (widgetId.current && window.turnstile) {
+            try { window.turnstile.remove(widgetId.current); } catch(e){}
+            widgetId.current = null;
+        }
     };
   }, []);
 
@@ -97,22 +105,29 @@ export function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("🖱️ [DEBUG] Botão Clicado. Iniciando validação...");
 
     if (formData.password !== formData.confirmPassword) {
       Swal.fire('Erro', 'As senhas não coincidem.', 'error');
       return;
     }
 
-    // 🔒 TRAVA DE SEGURANÇA
+    // 🔒 TRAVA DE SEGURANÇA COM LOG
     if (!turnstileToken) {
-      Swal.fire('Atenção', 'Aguarde a verificação "Não sou um robô".', 'warning');
+      console.warn("⛔ [DEBUG] Bloqueado: Token Turnstile está vazio.");
+      Swal.fire({
+        title: 'Verificação Necessária',
+        text: 'Por favor, aguarde o "check" verde do robô.',
+        icon: 'warning',
+        confirmButtonColor: '#c333ff'
+      });
       return;
     }
 
     setLoading(true);
+    console.log("🚀 [DEBUG] Enviando dados para API...");
 
     try {
-      // Envia o token junto com os dados
       await authService.register(
         formData.username, 
         formData.email, 
@@ -121,7 +136,8 @@ export function Register() {
         turnstileToken 
       );
       
-      // Auto-login após registro
+      console.log("✅ [DEBUG] Registro sucesso. Tentando auto-login...");
+      
       try {
         await login(formData.email, formData.password);
         Swal.fire({
@@ -137,11 +153,10 @@ export function Register() {
       }
 
     } catch (error) {
-      console.error("Register error:", error);
+      console.error("❌ [DEBUG] Erro na API de Registro:", error);
       const msg = error.response?.data?.detail || 'Erro ao criar conta.';
       Swal.fire('Erro', msg, 'error');
       
-      // Reseta o captcha em caso de erro
       if (window.turnstile && widgetId.current) {
         window.turnstile.reset(widgetId.current);
         setTurnstileToken('');
@@ -165,6 +180,7 @@ export function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
+          {/* USUÁRIO */}
           <div className="input-group-login">
             <User size={20} className="input-icon" />
             <input 
@@ -177,6 +193,7 @@ export function Register() {
             />
           </div>
 
+          {/* NOME COMPLETO */}
           <div className="input-group-login">
              <User size={20} className="input-icon" />
             <input 
@@ -188,6 +205,7 @@ export function Register() {
             />
           </div>
 
+          {/* EMAIL */}
           <div className="input-group-login">
             <Mail size={20} className="input-icon" />
             <input 
@@ -200,6 +218,7 @@ export function Register() {
             />
           </div>
 
+          {/* SENHA */}
           <div className="input-group-login">
             <Lock size={20} className="input-icon" />
             <input 
@@ -212,6 +231,7 @@ export function Register() {
             />
           </div>
 
+          {/* CONFIRMAR SENHA */}
           <div className="input-group-login">
             <Lock size={20} className="input-icon" />
             <input 
@@ -224,7 +244,8 @@ export function Register() {
             />
           </div>
 
-          {/* Container do Cloudflare */}
+          {/* 🛡️ WIDGET CLOUDFLARE TURNSTILE */}
+          {/* Renderiza um container vazio com altura fixa para evitar layout shift */}
           <div 
             ref={turnstileRef} 
             className="turnstile-container" 
