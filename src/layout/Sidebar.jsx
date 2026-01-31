@@ -51,6 +51,9 @@ export function Sidebar({ isOpen, onClose }) {
     return currentPath === path ? 'active' : '';
   };
 
+  // 🛡️ VERIFICA SE É SUPER ADMIN
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN' || user?.is_superuser;
+
   return (
     <>
       <div 
@@ -87,19 +90,21 @@ export function Sidebar({ isOpen, onClose }) {
         <nav className="sidebar-nav">
           
           {/* 🔥 ÁREA MESTRA (SUPER ADMIN) 🔥 */}
-          {(user?.is_superuser || user?.username === 'AdminZenyx') && (
-            <div className="admin-section">
-              <div className="admin-section-title">
-                ÁREA MESTRA
+          {(isSuperAdmin || user?.username === 'AdminZenyx') && (
+            <div className="admin-section" style={{ marginBottom: '15px' }}>
+              <div className="menu-label" style={{ color: '#f59e0b', marginBottom: '5px' }}>
+                ADMINISTRAÇÃO
               </div>
               <Link 
                 to="/superadmin" 
-                className={`nav-item super-admin ${isActive('/superadmin')}`}
+                className={`nav-item super-admin-link ${isActive('/superadmin')}`}
                 onClick={onClose}
+                style={{ color: '#f59e0b' }}
               >
                 <Crown size={20} />
-                <span>Super Admin</span>
+                <span>Painel Master</span>
               </Link>
+              <div className="divider"></div>
             </div>
           )}
 
@@ -137,10 +142,10 @@ export function Sidebar({ isOpen, onClose }) {
           {/* === GRUPO: MEUS BOTS === */}
           <div className="nav-group">
             <div 
-              className={`nav-item group-header ${isBotMenuOpen ? 'open' : ''}`}
+              className={`nav-item has-submenu ${isBotMenuOpen ? 'open' : ''}`}
               onClick={() => setIsBotMenuOpen(!isBotMenuOpen)}
             >
-              <div className="group-label">
+              <div className="nav-item-content" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <MessageSquare size={20} />
                 <span>Meus Bots</span>
               </div>
@@ -148,7 +153,7 @@ export function Sidebar({ isOpen, onClose }) {
             </div>
             
             {isBotMenuOpen && (
-              <div className="nav-subitems">
+              <div className="submenu">
                 <Link 
                   to={hasBot ? "/bots" : "#"} 
                   className={`nav-item ${isActive('/bots')} ${!hasBot ? 'locked-nav' : ''}`} 
@@ -187,10 +192,10 @@ export function Sidebar({ isOpen, onClose }) {
           {/* SUBMENU: PLANOS E OFERTAS */}
           <div className="nav-group" style={!hasBot ? { opacity: 0.5 } : {}}>
             <div 
-              className={`nav-item-header ${isOffersMenuOpen ? 'open' : ''}`} 
+              className={`nav-item has-submenu ${isOffersMenuOpen ? 'open' : ''}`} 
               onClick={() => hasBot && setIsOffersMenuOpen(!isOffersMenuOpen)}
             >
-              <div className="nav-item-header-content">
+              <div className="nav-item-content" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <CreditCard size={20} />
                 <span>Planos e Ofertas</span>
               </div>
@@ -198,7 +203,7 @@ export function Sidebar({ isOpen, onClose }) {
             </div>
 
             {hasBot && isOffersMenuOpen && (
-              <div className="nav-subitems">
+              <div className="submenu">
                 <Link to="/planos" className={`nav-item ${isActive('/planos')}`} onClick={onClose}>
                   <Star size={18} /> <span>Planos de Acesso</span>
                 </Link>
@@ -212,10 +217,10 @@ export function Sidebar({ isOpen, onClose }) {
           {/* SUBMENU: EXTRAS - 🆕 COM DISPARO AUTOMÁTICO */}
           <div className="nav-group" style={!hasBot ? { opacity: 0.5 } : {}}>
             <div 
-              className={`nav-item-header ${isExtrasMenuOpen ? 'open' : ''}`} 
+              className={`nav-item has-submenu ${isExtrasMenuOpen ? 'open' : ''}`} 
               onClick={() => hasBot && setIsExtrasMenuOpen(!isExtrasMenuOpen)}
             >
-              <div className="nav-item-header-content">
+              <div className="nav-item-content" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <BookOpen size={20} />
                 <span>Extras</span>
               </div>
@@ -223,7 +228,7 @@ export function Sidebar({ isOpen, onClose }) {
             </div>
 
             {hasBot && isExtrasMenuOpen && (
-              <div className="nav-subitems">
+              <div className="submenu">
                 <Link to="/tutorial" className={`nav-item ${isActive('/tutorial')}`} onClick={onClose}>
                   <BookOpen size={18} /> <span>Tutoriais</span>
                 </Link>
