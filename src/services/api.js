@@ -743,6 +743,17 @@ export const superAdminService = {
       console.error("Erro ao deletar usuário:", error);
       throw error;
     }
+  },
+
+  // 👇 🔥 CORREÇÃO: ADICIONADA A FUNÇÃO QUE FALTAVA (sendBroadcast) 🔥
+  sendBroadcast: async (broadcastData) => {
+    try {
+      const response = await api.post('/api/admin/broadcast', broadcastData);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao enviar broadcast:", error);
+      throw error;
+    }
   }
 };
 
