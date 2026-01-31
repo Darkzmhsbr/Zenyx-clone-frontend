@@ -15,41 +15,77 @@ export function Register() {
     confirmPassword: '',
     fullName: ''
   });
-  const [turnstileToken, setTurnstileToken] = useState(''); // Estado para o token
+  
+  // Adicionado estado para o token do Cloudflare
+  const [turnstileToken, setTurnstileToken] = useState(''); 
   const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
   const { login } = useAuth();
+  
+  // Refs para o widget (Igual ao Login.jsx)
   const turnstileRef = useRef(null);
+  const widgetId = useRef(null); 
 
-  // 🛡️ Carrega o Script do Turnstile e Renderiza o Widget
+  // 🛡️ Lógica Blindada do Cloudflare (Cópia fiel do Login.jsx que funciona)
   useEffect(() => {
-    const scriptId = 'cloudflare-turnstile-script';
-    
-    const renderWidget = () => {
+    const initTurnstile = () => {
       if (window.turnstile && turnstileRef.current) {
-        window.turnstile.render(turnstileRef.current, {
-          sitekey: import.meta.env.VITE_TURNSTILE_SITEKEY,
-          callback: (token) => {
-            setTurnstileToken(token);
-          },
-          'expired-callback': () => {
-            setTurnstileToken('');
-          },
-        });
+        // Se já existir um widget, limpa antes de criar outro
+        if (widgetId.current) {
+            try {
+                window.turnstile.remove(widgetId.current);
+            } catch (e) {
+                console.warn("Widget cleanup error", e);
+            }
+        }
+
+        try {
+          // Renderiza o widget
+          const id = window.turnstile.render(turnstileRef.current, {
+            sitekey: import.meta.env.VITE_TURNSTILE_SITEKEY,
+            theme: 'dark',
+            callback: (token) => {
+              console.log('✅ Token gerado:', token);
+              setTurnstileToken(token);
+            },
+            'expired-callback': () => {
+              setTurnstileToken('');
+            },
+            'error-callback': () => {
+              console.error('❌ Erro Cloudflare');
+              setTurnstileToken('');
+            }
+          });
+          widgetId.current = id;
+        } catch (error) {
+          console.error('Turnstile render error:', error);
+        }
       }
     };
 
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.async = true;
-      script.defer = true;
-      script.onload = renderWidget;
-      document.body.appendChild(script);
+    // Tenta iniciar imediatamente se o script já estiver carregado
+    if (window.turnstile) {
+        initTurnstile();
     } else {
-      setTimeout(renderWidget, 500);
+        // Se não, aguarda um pouco (fallback)
+        const checkInterval = setInterval(() => {
+            if (window.turnstile) {
+                clearInterval(checkInterval);
+                initTurnstile();
+            }
+        }, 100);
     }
+
+    // Limpeza ao sair da página
+    return () => {
+      if (widgetId.current && window.turnstile) {
+        try {
+            window.turnstile.remove(widgetId.current);
+        } catch (e) {}
+        widgetId.current = null;
+      }
+    };
   }, []);
 
   const handleChange = (e) => {
@@ -59,115 +95,57 @@ export function Register() {
     });
   };
 
-  const handleRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validações
-    if (!formData.username || !formData.email || !formData.password) {
-      Swal.fire({
-        title: 'Campos Obrigatórios',
-        text: 'Por favor, preencha todos os campos obrigatórios.',
-        icon: 'warning',
-        background: '#1b1730',
-        color: '#fff',
-        confirmButtonColor: '#c333ff'
-      });
-      return;
-    }
 
     if (formData.password !== formData.confirmPassword) {
-      Swal.fire({
-        title: 'Senhas Não Coincidem',
-        text: 'As senhas digitadas não são iguais.',
-        icon: 'error',
-        background: '#1b1730',
-        color: '#fff',
-        confirmButtonColor: '#c333ff'
-      });
+      Swal.fire('Erro', 'As senhas não coincidem.', 'error');
       return;
     }
 
-    if (formData.password.length < 6) {
-      Swal.fire({
-        title: 'Senha Fraca',
-        text: 'A senha deve ter pelo menos 6 caracteres.',
-        icon: 'warning',
-        background: '#1b1730',
-        color: '#fff',
-        confirmButtonColor: '#c333ff'
-      });
-      return;
-    }
-
-    // 🛡️ Validação do Turnstile
+    // 🔒 TRAVA DE SEGURANÇA
     if (!turnstileToken) {
-      Swal.fire({
-        title: 'Verificação Necessária',
-        text: 'Por favor, confirme que você é humano clicando na caixa de verificação.',
-        icon: 'warning',
-        background: '#1b1730',
-        color: '#fff',
-        confirmButtonColor: '#c333ff'
-      });
+      Swal.fire('Atenção', 'Aguarde a verificação "Não sou um robô".', 'warning');
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. Cria a conta no Backend
+      // Envia o token junto com os dados
       await authService.register(
-        formData.username,
-        formData.email,
-        formData.password,
-        formData.fullName || formData.username,
+        formData.username, 
+        formData.email, 
+        formData.password, 
+        formData.fullName,
         turnstileToken 
       );
-
-      // 🔥 2. IMPORTANTE: Chame o login do contexto para setar o estado global
-      // Isso evita que o sistema redirecione o usuário para o login novamente
-      await login(formData.username, formData.password, turnstileToken);
-
-      console.log("✅ Cadastro e Login realizados com sucesso");
-
-      Swal.fire({
-        title: 'Cadastro Realizado!',
-        text: 'Sua conta foi criada com sucesso. Redirecionando para o setup...',
-        icon: 'success',
-        background: '#1b1730',
-        color: '#fff',
-        confirmButtonColor: '#c333ff',
-        timer: 2000,
-        timerProgressBar: true
-      }).then(() => {
-        // 🚀 Redireciona para o passo obrigatório
-        navigate('/bots/new'); 
-      });
-
-    } catch (error) {
-      console.error("❌ Erro no cadastro:", error);
       
-      let errorMessage = 'Erro ao criar conta. Tente novamente.';
-      
-      if (error.response?.status === 400) {
-        errorMessage = error.response.data.detail || 'Usuário ou email já cadastrado.';
-      } else if (!error.response) {
-        errorMessage = 'Erro de conexão. Verifique sua internet.';
+      // Auto-login após registro
+      try {
+        await login(formData.email, formData.password);
+        Swal.fire({
+          icon: 'success',
+          title: 'Conta Criada!',
+          timer: 2000,
+          showConfirmButton: false
+        }).then(() => {
+          navigate('/dashboard');
+        });
+      } catch (loginError) {
+        navigate('/login');
       }
 
-      Swal.fire({
-        title: 'Erro no Cadastro',
-        text: errorMessage,
-        icon: 'error',
-        background: '#1b1730',
-        color: '#fff',
-        confirmButtonColor: '#c333ff'
-      });
-
-      // Reseta o Turnstile
-      if (window.turnstile) window.turnstile.reset();
-      setTurnstileToken('');
-
+    } catch (error) {
+      console.error("Register error:", error);
+      const msg = error.response?.data?.detail || 'Erro ao criar conta.';
+      Swal.fire('Erro', msg, 'error');
+      
+      // Reseta o captcha em caso de erro
+      if (window.turnstile && widgetId.current) {
+        window.turnstile.reset(widgetId.current);
+        setTurnstileToken('');
+      }
     } finally {
       setLoading(false);
     }
@@ -177,20 +155,36 @@ export function Register() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <div className="logo-glow">Zenyx</div>
+          <div className="login-logo">
+            <div className="logo-icon">
+              <UserPlus size={32} color="white" />
+            </div>
+          </div>
+          <h2>Zenyx</h2>
           <p>Criar Nova Conta</p>
         </div>
-        
-        <form onSubmit={handleRegister} className="login-form">
+
+        <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group-login">
             <User size={20} className="input-icon" />
             <input 
               type="text" 
               name="username"
-              placeholder="Usuário *" 
+              placeholder="Usuário" 
               value={formData.username}
               onChange={handleChange}
               required
+            />
+          </div>
+
+          <div className="input-group-login">
+             <User size={20} className="input-icon" />
+            <input 
+              type="text" 
+              name="fullName"
+              placeholder="Nome Completo (opcional)" 
+              value={formData.fullName}
+              onChange={handleChange}
             />
           </div>
 
@@ -203,17 +197,6 @@ export function Register() {
               value={formData.email}
               onChange={handleChange}
               required
-            />
-          </div>
-
-          <div className="input-group-login">
-            <UserPlus size={20} className="input-icon" />
-            <input 
-              type="text" 
-              name="fullName"
-              placeholder="Nome Completo (opcional)" 
-              value={formData.fullName}
-              onChange={handleChange}
             />
           </div>
 
@@ -241,11 +224,11 @@ export function Register() {
             />
           </div>
 
-          {/* 🛡️ WIDGET CLOUDFLARE TURNSTILE */}
+          {/* Container do Cloudflare */}
           <div 
             ref={turnstileRef} 
             className="turnstile-container" 
-            style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}
+            style={{ minHeight: '65px', margin: '15px 0', display: 'flex', justifyContent: 'center' }}
           ></div>
 
           <Button 
