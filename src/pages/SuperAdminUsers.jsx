@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { superAdminService } from '../services/api';
+import { superAdminService, botService } from '../services/api'; // Adicionado botService
 import './SuperAdmin.css';
 import Swal from 'sweetalert2';
 import { 
   Search, Filter, MoreVertical, LogIn, Trash2, 
   Shield, Edit, Ban, CheckCircle, ChevronLeft, ChevronRight,
-  Eye, RefreshCw, Save, X
+  Eye, RefreshCw, Save, X, Power, MessageSquare
 } from 'lucide-react';
 
 export function SuperAdminUsers() {
@@ -14,7 +14,7 @@ export function SuperAdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Estado de Filtros Complexo (Mantendo estrutura original)
+  // Estado de Filtros (Mantido da sua versão)
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -22,7 +22,7 @@ export function SuperAdminUsers() {
     per_page: 50
   });
 
-  // Estado de Paginação
+  // Estado de Paginação (Mantido da sua versão)
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -30,20 +30,19 @@ export function SuperAdminUsers() {
     total_pages: 0
   });
 
-  // Estados de Controle de Modal e Ações
+  // Estados de Controle
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null); // 'details', 'delete', 'status', 'promote'
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Estado para Edição (Financeiro + Role)
+  // Estado para edição de dados extras (Adicionado Role)
   const [editData, setEditData] = useState({ 
     taxa_venda: 60, 
     pushin_pay_id: '',
-    role: 'USER' // 🆕 Adicionado para gerenciar cargos
+    role: 'USER' 
   });
 
-  // Recarrega quando a página muda
   useEffect(() => {
     loadUsers();
   }, [filters.page]);
@@ -54,7 +53,7 @@ export function SuperAdminUsers() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Chama a nova API getUsers (compatível com api.js)
+      // Usa a função correta do api.js
       const response = await superAdminService.getUsers(
         filters.page, 
         filters.per_page, 
@@ -71,9 +70,8 @@ export function SuperAdminUsers() {
       });
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
-      
       if (error.response?.status === 403) {
-        Swal.fire('Acesso Negado', 'Você não tem privilégios de super-administrador', 'error');
+        Swal.fire("Acesso Negado", "Você não tem privilégios de super-administrador", "error");
         navigate('/');
       }
     } finally {
@@ -81,9 +79,6 @@ export function SuperAdminUsers() {
     }
   };
 
-  // =========================================================
-  // 🕹️ HANDLERS DE FILTRO
-  // =========================================================
   const handleSearch = () => {
     setFilters(prev => ({ ...prev, page: 1 }));
     loadUsers();
@@ -96,7 +91,6 @@ export function SuperAdminUsers() {
       page: 1,
       per_page: 50
     });
-    // Pequeno timeout para garantir reset do estado antes do load
     setTimeout(() => loadUsers(), 100);
   };
 
@@ -117,27 +111,25 @@ export function SuperAdminUsers() {
   };
 
   // =========================================================
-  // 🕵️ FUNCIONALIDADE: LOGIN IMPERSONADO (NOVO)
+  // 🕵️ LOGIN IMPERSONADO (NOVO)
   // =========================================================
   const handleImpersonate = async (user) => {
     const result = await Swal.fire({
-      title: `Entrar como ${user.username}?`,
-      text: "Você terá acesso total à conta deste usuário como se fosse ele.",
+      title: `Acessar como ${user.username}?`,
+      text: "Você será desconectado da sua conta e entrará como este cliente.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#c333ff',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sim, Acessar Painel',
+      confirmButtonText: 'Sim, Acessar',
       cancelButtonText: 'Cancelar'
     });
 
     if (result.isConfirmed) {
       try {
         Swal.showLoading();
-        // Chama API para gerar token do usuário alvo
         const data = await superAdminService.impersonateUser(user.id);
         
-        // Salva o novo token e dados do usuário impersonado
         localStorage.setItem('zenyx_token', data.access_token);
         localStorage.setItem('zenyx_admin_user', JSON.stringify({
             ...data, 
@@ -145,32 +137,30 @@ export function SuperAdminUsers() {
         }));
         
         Swal.close();
-        
-        // Redireciona para o Dashboard (agora logado como o cliente)
         window.location.href = '/'; 
-        
       } catch (error) {
-        console.error(error);
         Swal.fire('Erro', 'Falha ao realizar login impersonado.', 'error');
       }
     }
   };
 
   // =========================================================
-  // 👁️ DETALHES E EDIÇÃO COMPLETA
+  // 👁️ DETALHES + CARREGAMENTO PARA EDIÇÃO
   // =========================================================
   const handleViewDetails = async (user) => {
     setActionLoading(true);
     try {
-      // Busca dados completos do usuário (incluindo bots e logs recentes)
       const details = await superAdminService.getUserDetails(user.id);
-      setSelectedUser(details); // O objeto details tem { user, stats, bots, recent_activity }
+      setSelectedUser(details);
       
-      // Popula o formulário de edição
+      // Lógica para determinar a Role Visual corretamente
+      let currentRole = details.user.role || 'USER';
+      if (details.user.is_superuser) currentRole = 'SUPER_ADMIN';
+
       setEditData({
         taxa_venda: details.user.taxa_venda || 60,
         pushin_pay_id: details.user.pushin_pay_id || '',
-        role: details.user.role || 'USER'
+        role: currentRole
       });
 
       setModalType('details');
@@ -185,28 +175,29 @@ export function SuperAdminUsers() {
   // =========================================================
   // 💾 SALVAR DADOS (FINANCEIRO + ROLE)
   // =========================================================
-  const handleSaveEdit = async () => {
-    // Verifica se temos o usuário carregado
+  const handleSaveFinancials = async () => {
     if (!selectedUser || !selectedUser.user) return;
     
     setActionLoading(true);
     try {
-        // 1. Atualiza dados no servidor
+        // 1. Atualiza dados financeiros
         await superAdminService.updateUser(selectedUser.user.id, {
             taxa_venda: parseInt(editData.taxa_venda),
             pushin_pay_id: editData.pushin_pay_id
         });
-
-        // 2. Verifica se houve mudança de cargo (Role) e aplica
-        // Lógica: Se o cargo mudou, chamamos a promoção/rebaixamento ou endpoint específico
-        // Aqui simulamos a promoção baseada na role escolhida
+        
+        // 2. Lógica de Promoção/Rebaixamento baseada na Role selecionada
+        let isNowSuper = selectedUser.user.is_superuser;
+        
         if (editData.role === 'SUPER_ADMIN' && !selectedUser.user.is_superuser) {
             await superAdminService.promoteUser(selectedUser.user.id, true);
+            isNowSuper = true;
         } else if (editData.role !== 'SUPER_ADMIN' && selectedUser.user.is_superuser) {
             await superAdminService.promoteUser(selectedUser.user.id, false);
+            isNowSuper = false;
         }
         
-        // Atualiza visualmente o objeto selecionado na tela para não precisar recarregar tudo
+        // Atualiza visualmente o objeto selecionado (para o modal não fechar ou piscar)
         setSelectedUser(prev => ({
             ...prev,
             user: {
@@ -214,40 +205,82 @@ export function SuperAdminUsers() {
                 taxa_venda: editData.taxa_venda,
                 pushin_pay_id: editData.pushin_pay_id,
                 role: editData.role,
-                is_superuser: editData.role === 'SUPER_ADMIN'
+                is_superuser: isNowSuper
             }
         }));
-        
-        // Também atualiza a lista principal de fundo
+
+        // Atualiza a lista principal em segundo plano
         setUsers(prev => prev.map(u => u.id === selectedUser.user.id ? {
             ...u,
             role: editData.role,
-            is_superuser: editData.role === 'SUPER_ADMIN'
+            is_superuser: isNowSuper,
+            total_revenue: u.total_revenue // Mantém dados que não mudaram
         } : u));
         
-        Swal.fire('Salvo', 'Dados do usuário atualizados com sucesso!', 'success');
+        Swal.fire('Salvo', 'Dados atualizados com sucesso!', 'success');
     } catch (error) {
         console.error(error);
-        Swal.fire('Erro', 'Falha ao salvar dados.', 'error');
+        Swal.fire('Erro', 'Falha ao salvar alterações.', 'error');
     } finally {
         setActionLoading(false);
     }
   };
 
   // =========================================================
-  // 🔒 BLOQUEAR / ATIVAR USUÁRIO
+  // 🤖 AÇÕES DE BOT (NOVO: DELETAR/PAUSAR)
+  // =========================================================
+  const handleDeleteBot = async (botId) => {
+    const result = await Swal.fire({
+      title: 'Deletar este Bot?',
+      text: "Isso removerá o bot e todos os dados dele (planos, leads) permanentemente.",
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Sim, Deletar'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await botService.deleteBot(botId);
+        
+        // Remove da lista visualmente
+        setSelectedUser(prev => ({
+          ...prev,
+          bots: prev.bots.filter(b => b.id !== botId)
+        }));
+        
+        Swal.fire('Deletado', 'Bot removido com sucesso.', 'success');
+      } catch (error) {
+        Swal.fire('Erro', 'Não foi possível deletar o bot.', 'error');
+      }
+    }
+  };
+
+  const handleToggleBot = async (botId) => {
+    try {
+      await botService.toggleBot(botId);
+      // Atualiza status visualmente
+      setSelectedUser(prev => ({
+        ...prev,
+        bots: prev.bots.map(b => b.id === botId ? { ...b, status: b.status === 'ativo' ? 'pausado' : 'ativo' } : b)
+      }));
+    } catch (error) {
+      Swal.fire('Erro', 'Erro ao alterar status do bot.', 'error');
+    }
+  };
+
+  // =========================================================
+  // 🔒 AÇÕES DE USUÁRIO (STATUS/DELETE/PROMOTE)
   // =========================================================
   const handleToggleStatus = async () => {
     if (!selectedUser) return;
-    
     setActionLoading(true);
     try {
       const newStatus = !selectedUser.is_active;
       await superAdminService.updateUserStatus(selectedUser.id, newStatus);
-      
-      Swal.fire('Sucesso', `Usuário ${newStatus ? 'ativado' : 'bloqueado'} com sucesso!`, 'success');
+      Swal.fire('Sucesso', `Usuário ${newStatus ? 'ativado' : 'bloqueado'}!`, 'success');
       closeModal();
-      loadUsers(); // Recarrega a lista
+      loadUsers();
     } catch (error) {
       Swal.fire('Erro', error.response?.data?.detail || "Erro ao atualizar status", 'error');
     } finally {
@@ -255,21 +288,32 @@ export function SuperAdminUsers() {
     }
   };
 
-  // =========================================================
-  // 🗑️ DELETAR USUÁRIO
-  // =========================================================
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
-    
     setActionLoading(true);
     try {
       await superAdminService.deleteUser(selectedUser.id);
-      
-      Swal.fire('Deletado', `Usuário '${selectedUser.username}' deletado com sucesso!`, 'success');
+      Swal.fire('Deletado', `Usuário deletado com sucesso!`, 'success');
       closeModal();
-      loadUsers(); // Recarrega a lista
+      loadUsers();
     } catch (error) {
       Swal.fire('Erro', error.response?.data?.detail || "Erro ao deletar usuário", 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePromoteUser = async () => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      const newStatus = !selectedUser.is_superuser;
+      await superAdminService.promoteUser(selectedUser.id, newStatus);
+      Swal.fire('Sucesso', `Privilégios alterados com sucesso!`, 'success');
+      closeModal();
+      loadUsers();
+    } catch (error) {
+      Swal.fire('Erro', "Erro ao alterar privilégios", 'error');
     } finally {
       setActionLoading(false);
     }
@@ -281,14 +325,17 @@ export function SuperAdminUsers() {
   const formatDate = (isoDate) => {
     if (!isoDate) return '-';
     const date = new Date(isoDate);
-    return date.toLocaleDateString('pt-BR') + ' às ' + date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+    return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
   };
 
   const formatCurrency = (value) => {
-    return (value || 0).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });
+    return (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  // Helper visual para exibir o cargo correto na tabela
+  const getDisplayRole = (user) => {
+    if (user.is_superuser) return 'SUPER_ADMIN';
+    return user.role || 'USER';
   };
 
   return (
@@ -347,7 +394,7 @@ export function SuperAdminUsers() {
         </div>
       </div>
 
-      {/* ESTATÍSTICAS RÁPIDAS DA LISTA */}
+      {/* ESTATÍSTICAS */}
       <div className="users-stats">
         <span>Total de usuários: <strong>{pagination.total}</strong></span>
         <span>Página {pagination.page} de {pagination.total_pages}</span>
@@ -369,7 +416,7 @@ export function SuperAdminUsers() {
             <thead>
               <tr>
                 <th>Usuário / Email</th>
-                <th>Cargo (Role)</th>
+                <th>Cargo</th>
                 <th>Bots</th>
                 <th>Receita</th>
                 <th>Vendas</th>
@@ -388,7 +435,7 @@ export function SuperAdminUsers() {
                     <div className="user-email">{user.email}</div>
                   </td>
                   <td>
-                    <span className="role-badge">{user.role || 'USER'}</span>
+                    <span className="role-badge">{getDisplayRole(user)}</span>
                   </td>
                   <td className="user-bots">{user.total_bots || 0}</td>
                   <td className="user-revenue">{formatCurrency(user.total_revenue)}</td>
@@ -414,7 +461,7 @@ export function SuperAdminUsers() {
                       {/* BOTÃO DETALHES/EDITAR */}
                       <button 
                         className="btn-action view" 
-                        title="Ver Detalhes e Editar"
+                        title="Ver Detalhes, Bots e Editar"
                         onClick={() => handleViewDetails(user)}
                       >
                         <Eye size={16} />
@@ -476,11 +523,11 @@ export function SuperAdminUsers() {
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             
-            {/* --- MODAL TIPO: DETALHES E EDIÇÃO --- */}
+            {/* --- MODAL TIPO: DETALHES E EDIÇÃO COMPLETA --- */}
             {modalType === 'details' && selectedUser.user && (
               <>
                 <div className="modal-header">
-                  <h2>👤 Detalhes & Edição: {selectedUser.user.username}</h2>
+                  <h2>👤 Gerenciar: {selectedUser.user.username}</h2>
                   <button className="modal-close" onClick={closeModal}> <X size={20} /> </button>
                 </div>
                 <div className="modal-body">
@@ -499,66 +546,52 @@ export function SuperAdminUsers() {
                     {/* Seção 2: Edição Financeira e de Cargo */}
                     <div className="detail-section" style={{ border: '1px solid #c333ff', background: 'rgba(195, 51, 255, 0.03)' }}>
                         <h3 style={{ color: '#c333ff', borderBottomColor: '#c333ff' }}>💰 Financeiro & Permissões</h3>
-                        <div style={{ display: 'grid', gap: '15px', marginTop: '10px' }}>
-                            
-                            {/* Role Selector */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                             <div>
-                                <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px', color: '#ccc' }}>
-                                    Cargo (Role)
-                                </label>
+                                <label style={{ fontSize: '12px', color: '#ccc' }}>Cargo (Role)</label>
                                 <select 
                                     className="form-control"
                                     value={editData.role}
                                     onChange={(e) => setEditData({...editData, role: e.target.value})}
-                                    style={{ width: '100%', padding: '10px', background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                    style={{ width: '100%', padding: '8px', background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
                                 >
-                                    <option value="USER">Usuário (Cliente Padrão)</option>
+                                    <option value="USER">Usuário (Padrão)</option>
                                     <option value="ADMIN">Admin (Suporte)</option>
-                                    <option value="PARTNER">Parceiro (Investidor)</option>
-                                    <option value="SUPER_ADMIN">👑 SUPER ADMIN (Master)</option>
+                                    <option value="PARTNER">Parceiro</option>
+                                    <option value="SUPER_ADMIN">👑 MASTER</option>
                                 </select>
                             </div>
-
-                            {/* Taxa de Venda */}
                             <div>
-                                <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px', color: '#ccc' }}>
-                                    Taxa por Venda (em centavos)
-                                </label>
+                                <label style={{ fontSize: '12px', color: '#ccc' }}>Taxa Venda (cents)</label>
                                 <input 
                                     type="number" 
                                     value={editData.taxa_venda}
                                     onChange={(e) => setEditData({...editData, taxa_venda: e.target.value})}
-                                    style={{ width: '100%', padding: '10px', background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
-                                />
-                                <span style={{fontSize: '11px', color: '#888'}}>Ex: 60 = R$ 0,60</span>
-                            </div>
-
-                            {/* Pushin Pay ID */}
-                            <div>
-                                <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px', color: '#ccc' }}>
-                                    Pushin Pay ID (Destino do Lucro)
-                                </label>
-                                <input 
-                                    type="text" 
-                                    value={editData.pushin_pay_id}
-                                    onChange={(e) => setEditData({...editData, pushin_pay_id: e.target.value})}
-                                    placeholder="Ex: 9D4FA0F6-..."
-                                    style={{ width: '100%', padding: '10px', background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                    style={{ width: '100%', padding: '8px', background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
                                 />
                             </div>
-                            
-                            <button 
-                                onClick={handleSaveEdit}
-                                disabled={actionLoading}
-                                style={{ 
-                                    marginTop: '5px', padding: '10px', background: '#c333ff', color: '#fff', 
-                                    border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                                }}
-                            >
-                                <Save size={16} /> {actionLoading ? 'Salvando...' : 'Salvar Alterações'}
-                            </button>
                         </div>
+                        <div style={{marginTop: '10px'}}>
+                            <label style={{ fontSize: '12px', color: '#ccc' }}>Pushin Pay ID</label>
+                            <input 
+                                type="text" 
+                                value={editData.pushin_pay_id}
+                                onChange={(e) => setEditData({...editData, pushin_pay_id: e.target.value})}
+                                placeholder="ID da conta Pushin Pay"
+                                style={{ width: '100%', padding: '8px', background: '#1a1a1a', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                            />
+                        </div>
+                        <button 
+                            onClick={handleSaveFinancials}
+                            disabled={actionLoading}
+                            style={{ 
+                                marginTop: '15px', width: '100%', padding: '10px', background: '#c333ff', color: '#fff', 
+                                border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            }}
+                        >
+                            <Save size={16} /> {actionLoading ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
                     </div>
 
                     {/* Seção 3: Estatísticas */}
@@ -570,36 +603,55 @@ export function SuperAdminUsers() {
                       <p><strong>Total de Leads:</strong> {selectedUser.stats.total_leads}</p>
                     </div>
 
-                    {/* Seção 4: Bots */}
-                    {selectedUser.bots && selectedUser.bots.length > 0 && (
+                    {/* Seção 4: Bots (COM AÇÕES NOVAS) */}
+                    {selectedUser.bots && selectedUser.bots.length > 0 ? (
                       <div className="detail-section">
-                        <h3>Bots ({selectedUser.bots.length})</h3>
+                        <h3>🤖 Bots do Usuário ({selectedUser.bots.length})</h3>
                         <div className="bots-list">
                           {selectedUser.bots.map((bot) => (
-                            <div key={bot.id} className="bot-item">
-                              <p><strong>{bot.nome}</strong> (@{bot.username})</p>
-                              <p className="bot-stats">
-                                {formatCurrency(bot.revenue)} | {bot.sales} vendas | {bot.status}
-                              </p>
+                            <div key={bot.id} className="bot-item" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                              <div>
+                                <p style={{margin: 0}}><strong>{bot.nome}</strong> (@{bot.username})</p>
+                                <p style={{margin: 0, fontSize: '12px', color: '#888'}}>
+                                  Status: <span style={{color: bot.status === 'ativo' ? '#10b981' : '#ef4444'}}>{bot.status}</span> | Vendas: {bot.sales}
+                                </p>
+                              </div>
+                              <div style={{display: 'flex', gap: '8px'}}>
+                                <button 
+                                  title={bot.status === 'ativo' ? "Pausar" : "Ativar"}
+                                  onClick={() => handleToggleBot(bot.id)}
+                                  style={{background: 'transparent', border: '1px solid #555', color: '#fff', borderRadius: '4px', padding: '6px', cursor: 'pointer'}}
+                                >
+                                  <Power size={14} />
+                                </button>
+                                <button 
+                                  title="Deletar Bot"
+                                  onClick={() => handleDeleteBot(bot.id)}
+                                  style={{background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '4px', padding: '6px', cursor: 'pointer'}}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
+                    ) : (
+                      <div className="detail-section">
+                        <h3>🤖 Bots</h3>
+                        <p style={{color: '#888', fontStyle: 'italic'}}>Este usuário não possui bots.</p>
+                      </div>
                     )}
 
-                    {/* Seção 5: Atividade Recente */}
+                    {/* Seção 5: Logs */}
                     {selectedUser.recent_activity && selectedUser.recent_activity.length > 0 && (
                       <div className="detail-section">
                         <h3>Atividade Recente</h3>
                         <div className="activity-list">
                           {selectedUser.recent_activity.map((log) => (
                             <div key={log.id} className="activity-item">
-                              <p>
-                                {log.success ? '✅' : '❌'} {log.description}
-                              </p>
-                              <span className="activity-date">
-                                {formatDate(log.created_at)}
-                              </span>
+                              <p>{log.success ? '✅' : '❌'} {log.description}</p>
+                              <span className="activity-date">{formatDate(log.created_at)}</span>
                             </div>
                           ))}
                         </div>
@@ -614,24 +666,16 @@ export function SuperAdminUsers() {
             {modalType === 'status' && (
               <>
                 <div className="modal-header">
-                  <h2>🔒 {selectedUser.is_active ? 'Desativar' : 'Ativar'} Usuário</h2>
-                  <button className="modal-close" onClick={closeModal}><X size={20} /></button>
+                  <h2>{selectedUser.is_active ? '🔒 Bloquear' : '🔓 Ativar'} Usuário</h2>
+                  <button className="modal-close" onClick={closeModal}><X size={20}/></button>
                 </div>
                 <div className="modal-body">
-                  <p>Tem certeza que deseja <strong>{selectedUser.is_active ? 'BLOQUEAR' : 'DESBLOQUEAR'}</strong> o acesso deste usuário?</p>
-                  <div className="user-info-box">
-                    <p><strong>Username:</strong> {selectedUser.username}</p>
-                    <p><strong>Email:</strong> {selectedUser.email}</p>
-                  </div>
-                  {selectedUser.is_active && (
-                    <p className="warning-text">⚠️ O usuário será desconectado e não poderá acessar o painel.</p>
-                  )}
+                  <p>Tem certeza que deseja alterar o status de <strong>{selectedUser.username}</strong>?</p>
+                  {selectedUser.is_active && <p className="warning-text">⚠️ O usuário será desconectado imediatamente.</p>}
                 </div>
                 <div className="modal-footer">
                   <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
-                  <button className="btn-confirm" onClick={handleToggleStatus} disabled={actionLoading}>
-                    {actionLoading ? 'Processando...' : 'Confirmar'}
-                  </button>
+                  <button className="btn-confirm" onClick={handleToggleStatus} disabled={actionLoading}>Confirmar</button>
                 </div>
               </>
             )}
@@ -641,22 +685,32 @@ export function SuperAdminUsers() {
               <>
                 <div className="modal-header">
                   <h2>🗑️ Deletar Usuário</h2>
-                  <button className="modal-close" onClick={closeModal}><X size={20} /></button>
+                  <button className="modal-close" onClick={closeModal}><X size={20}/></button>
                 </div>
                 <div className="modal-body">
-                  <p className="danger-text">⚠️ <strong>ATENÇÃO: ESTA AÇÃO É IRREVERSÍVEL!</strong></p>
-                  <p>Você está prestes a apagar todos os dados de:</p>
-                  <div className="user-info-box danger">
-                    <p><strong>Username:</strong> {selectedUser.username}</p>
-                    <p><strong>Bots:</strong> {selectedUser.total_bots}</p>
-                  </div>
-                  <p>Isso incluirá todos os bots, leads, configurações e histórico financeiro deste usuário.</p>
+                  <p className="danger-text">⚠️ <strong>AÇÃO IRREVERSÍVEL!</strong></p>
+                  <p>Isso apagará o usuário <strong>{selectedUser.username}</strong>, seus bots, leads e histórico.</p>
                 </div>
                 <div className="modal-footer">
                   <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
-                  <button className="btn-danger" onClick={handleDeleteUser} disabled={actionLoading}>
-                    {actionLoading ? 'Deletando...' : 'Deletar Permanentemente'}
-                  </button>
+                  <button className="btn-danger" onClick={handleDeleteUser} disabled={actionLoading}>Deletar Tudo</button>
+                </div>
+              </>
+            )}
+
+            {/* --- MODAL TIPO: PROMOVER (Legado, mantido por segurança) --- */}
+            {modalType === 'promote' && (
+              <>
+                <div className="modal-header">
+                  <h2>👑 Alterar Privilégios</h2>
+                  <button className="modal-close" onClick={closeModal}><X size={20}/></button>
+                </div>
+                <div className="modal-body">
+                  <p>Deseja {selectedUser.is_superuser ? 'REBAIXAR' : 'PROMOVER'} este usuário a Super Admin?</p>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
+                  <button className="btn-confirm" onClick={handlePromoteUser} disabled={actionLoading}>Confirmar</button>
                 </div>
               </>
             )}
