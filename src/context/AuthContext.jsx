@@ -18,6 +18,10 @@ export function AuthProvider({ children }) {
     if (token && savedUser) {
       try {
         const userData = JSON.parse(savedUser);
+        
+        // 🛡️ GARANTIA DE ROLE: Se o usuário salvo for antigo e não tiver role, define como USER
+        if (!userData.role) userData.role = 'USER';
+        
         setUser(userData);
         
         // Configura o token no axios globalmente assim que carrega
@@ -28,6 +32,12 @@ export function AuthProvider({ children }) {
         authService.getMe()
           .then(response => {
             setHasBot(response.has_bots || false);
+            // Opcional: Atualizar a role vinda do backend para garantir sincronia
+            if (response.role && response.role !== userData.role) {
+                const updatedUser = { ...userData, role: response.role };
+                setUser(updatedUser);
+                localStorage.setItem('zenyx_admin_user', JSON.stringify(updatedUser));
+            }
           })
           .catch(err => {
             console.error("Erro ao validar sessão:", err);
@@ -45,7 +55,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ============================================================
-  // 🔑 LOGIN CENTRALIZADO (COM TURNSTILE)
+  // 🔑 LOGIN CENTRALIZADO (COM TURNSTILE E ROLES)
   // ============================================================
   const login = async (username, password, turnstileToken) => {
     try {
@@ -61,7 +71,8 @@ export function AuthProvider({ children }) {
         id: data.user_id,
         username: data.username,
         name: data.username,
-        role: 'admin', 
+        // 🆕 CAPTURA A ROLE VINDA DO BACKEND
+        role: data.role || 'USER', 
         allowed_bots: [] 
       };
 
@@ -72,7 +83,10 @@ export function AuthProvider({ children }) {
       setUser(userData);
       setHasBot(data.has_bots || false); // Libera ou bloqueia o menu
       
-      console.log("✅ Login realizado com sucesso:", data.username);
+      // Atualiza o localStorage com a role nova
+      localStorage.setItem('zenyx_admin_user', JSON.stringify(userData));
+
+      console.log(`✅ Login realizado: ${data.username} [${userData.role}]`);
       return true;
       
     } catch (error) {
@@ -109,8 +123,15 @@ export function AuthProvider({ children }) {
     setHasBot(status);
   };
 
+  // 🛡️ HELPER: Verifica se o usuário tem permissão
+  const checkRole = (allowedRoles) => {
+    if (!user) return false;
+    if (user.role === 'SUPER_ADMIN') return true; // Super Admin pode tudo
+    return allowedRoles.includes(user.role);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, hasBot, updateHasBotStatus }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, hasBot, updateHasBotStatus, checkRole }}>
       {!loading && children}
     </AuthContext.Provider>
   );

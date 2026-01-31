@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BotProvider } from './context/BotContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext'; // 🆕 Adicionado useAuth
 import { MainLayout } from './layout/MainLayout';
 
 // Autenticação e Landing
@@ -34,7 +34,7 @@ import { SuperAdmin } from './pages/SuperAdmin';
 import { SuperAdminUsers } from './pages/SuperAdminUsers';
 import { Tutorial } from './pages/Tutorial';
 
-// 🆕 NOVA PÁGINA: Disparo Automático (Renomeada para evitar conflito)
+// 🆕 NOVA PÁGINA: Disparo Automático
 import { AutoRemarketing } from './pages/AutoRemarketingPage';
 
 // Mini App (Loja)
@@ -43,6 +43,35 @@ import { MiniAppCategory } from './pages/miniapp/MiniAppCategory';
 import { MiniAppCheckout } from './pages/miniapp/MiniAppCheckout';
 import { MiniAppPayment } from './pages/miniapp/MiniAppPayment';
 import { MiniAppSuccess } from './pages/miniapp/MiniAppSuccess';
+
+// =========================================================
+// 🆕 COMPONENTE GUARDA DE ROTAS (ROLE GUARD)
+// =========================================================
+const RoleGuard = ({ children, allowedRoles }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div style={{ padding: 40, marginLeft: 260 }}>Verificando permissões...</div>;
+  }
+
+  // Se não estiver logado, o MainLayout já trata, mas garantimos aqui
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // 1. Super Admin tem passe livre
+  if (user.role === 'SUPER_ADMIN' || user.is_superuser) {
+    return children;
+  }
+
+  // 2. Verifica se a role do usuário está na lista permitida
+  if (allowedRoles.includes(user.role)) {
+    return children;
+  }
+
+  // 3. Se não tiver permissão, redireciona para o Dashboard
+  return <Navigate to="/dashboard" replace />;
+};
 
 const Logout = () => {
   localStorage.removeItem('zenyx_admin_user');
@@ -59,7 +88,7 @@ const PlaceholderPage = ({ title }) => (
 );
 
 function App() {
-  // Captura global de usuário Telegram
+  // Captura global de usuário Telegram (MANTIDO INTACTO)
   useEffect(() => {
     if (!window.Telegram) {
         const script = document.createElement('script');
@@ -147,12 +176,35 @@ function App() {
               <Route path="/rastreamento" element={<Tracking />} />
               <Route path="/perfil" element={<Profile />} />
               
-              {/* Audit Logs */}
-              <Route path="/audit-logs" element={<AuditLogs />} />
+              {/* ======================================================== */}
+              {/* 🛡️ ROTAS PROTEGIDAS POR ROLE (SUPER ADMIN) */}
+              {/* ======================================================== */}
+              <Route 
+                path="/audit-logs" 
+                element={
+                  <RoleGuard allowedRoles={['SUPER_ADMIN']}>
+                    <AuditLogs />
+                  </RoleGuard>
+                } 
+              />
               
-              {/* Super Admin */}
-              <Route path="/superadmin" element={<SuperAdmin />} />
-              <Route path="/superadmin/users" element={<SuperAdminUsers />} />
+              <Route 
+                path="/superadmin" 
+                element={
+                  <RoleGuard allowedRoles={['SUPER_ADMIN']}>
+                    <SuperAdmin />
+                  </RoleGuard>
+                } 
+              />
+              
+              <Route 
+                path="/superadmin/users" 
+                element={
+                  <RoleGuard allowedRoles={['SUPER_ADMIN']}>
+                    <SuperAdminUsers />
+                  </RoleGuard>
+                } 
+              />
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
               
