@@ -20,13 +20,20 @@ export function AuthProvider({ children }) {
         const userData = JSON.parse(savedUser);
         setUser(userData);
         
-        // Configura o token no axios globalmente
+        // Configura o token no axios globalmente assim que carrega
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         // 🛡️ Sincroniza o status do bot ao recarregar a página
-        authService.getMe().then(response => {
-          setHasBot(response.has_bots || false);
-        }).catch(err => console.error("Erro ao validar status do bot:", err));
+        // Verifica se o token ainda é válido chamando /me
+        authService.getMe()
+          .then(response => {
+            setHasBot(response.has_bots || false);
+          })
+          .catch(err => {
+            console.error("Erro ao validar sessão:", err);
+            // Se der erro (ex: 401), limpa tudo
+            logout();
+          });
 
       } catch (error) {
         console.error("Erro ao carregar usuário:", error);
@@ -38,55 +45,39 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ============================================================
-  // 🔑 LOGIN COM API REAL E TURNSTILE
+  // 🔑 LOGIN CENTRALIZADO (COM TURNSTILE)
   // ============================================================
   const login = async (username, password, turnstileToken) => {
     try {
-      // Usando o authService em vez de chamar axios direto aqui, para manter consistência
-      // Mas como seu original tinha lógica customizada, vou manter a lógica aqui
-      // porém adaptada para enviar o token do turnstile
-      
-      const API_URL = 'https://zenyx-gbs-testesv1-production.up.railway.app';
-      
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
-        username: username,
-        password: password,
-        turnstile_token: turnstileToken // 🔥 Enviando o token para o backend
-      });
+      console.log("🔐 Iniciando login via AuthContext...");
 
-      // 🚀 CAPTURA has_bots vindo do backend
-      const { access_token, user_id, username: userName, has_bots } = response.data;
+      // 🔥 CHAMA O SERVICE (api.js)
+      // Isso garante que a URL correta (do .env) seja usada e o token seja enviado
+      const data = await authService.login(username, password, turnstileToken);
 
-      // Salva o token JWT
-      localStorage.setItem('zenyx_token', access_token);
+      // O authService.login já salva no localStorage, aqui atualizamos o ESTADO do React
       
-      // Cria objeto do usuário
       const userData = {
-        id: user_id,
-        username: userName,
-        name: userName,
-        role: 'admin', // Por enquanto todos são admin
-        allowed_bots: [] // FASE 2: Vai filtrar por owner_id
+        id: data.user_id,
+        username: data.username,
+        name: data.username,
+        role: 'admin', 
+        allowed_bots: [] 
       };
 
-      // Salva dados do usuário
-      localStorage.setItem('zenyx_admin_user', JSON.stringify(userData));
-      
-      // Configura token no axios
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
-      // Atualiza estados
+      // Configura o header do axios para as próximas requisições
+      axios.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
+
+      // Atualiza os estados da aplicação
       setUser(userData);
-      setHasBot(has_bots || false); // 🆕 Define se o usuário tem bot
+      setHasBot(data.has_bots || false); // Libera ou bloqueia o menu
       
-      console.log("✅ Login realizado:", userName);
+      console.log("✅ Login realizado com sucesso:", data.username);
       return true;
       
     } catch (error) {
-      console.error("❌ Erro no login:", error);
-      
-      // Propaga o erro para o componente tratar (mostrar alert específico)
-      throw error; 
+      console.error("❌ Erro no login (AuthContext):", error);
+      throw error; // Joga o erro para a tela de Login exibir o alerta
     }
   };
 
@@ -96,7 +87,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     console.log("🚪 Fazendo logout...");
     
-    // Limpa estado
+    // Limpa estado do React
     setUser(null);
     setHasBot(false);
     
@@ -106,14 +97,14 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('zenyx_selected_bot');
     localStorage.removeItem('zenyx_theme');
     
-    // Remove token do axios
+    // Remove token do axios global
     delete axios.defaults.headers.common['Authorization'];
     
-    // Força reload da página para garantir limpeza total
+    // Força reload da página para garantir limpeza total e redirecionar
     window.location.href = '/login';
   };
 
-  // 🆕 Função para atualizar o status do bot externamente (ex: no NewBot.jsx)
+  // 🆕 Função para atualizar o status do bot externamente (ex: ao criar o primeiro bot)
   const updateHasBotStatus = (status) => {
     setHasBot(status);
   };

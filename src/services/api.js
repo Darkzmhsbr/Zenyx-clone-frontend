@@ -42,12 +42,14 @@ api.interceptors.response.use(
       localStorage.removeItem('zenyx_token');
       localStorage.removeItem('zenyx_admin_user');
       
+      // Remove header global
+      delete api.defaults.headers.common['Authorization'];
+      
       // 🔥 CORREÇÃO DO LOOP INFINITO:
       // Só redireciona se NÃO estivermos já na tela de login, registro ou home
       const path = window.location.pathname;
       
       // Verifica se é uma rota protegida antes de chutar para login
-      // Se estiver na Landing Page ('/'), não faz nada, pois é pública
       if (!path.includes('/login') && !path.includes('/register') && path !== '/') {
          console.log("🔄 Redirecionando para login...");
          window.location.href = '/login';
@@ -61,7 +63,7 @@ api.interceptors.response.use(
 );
 
 // ============================================================
-// 🌐 SERVIÇO PÚBLICO (SEM AUTENTICAÇÃO) - LANDING PAGE 🆕
+// 🌐 SERVIÇO PÚBLICO (SEM AUTENTICAÇÃO) - LANDING PAGE
 // ============================================================
 export const publicService = {
   getActivityFeed: async () => {
@@ -87,7 +89,6 @@ export const publicService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
-      // Retorna valores padrão em caso de erro
       return {
         total_bots: 500,
         total_sales: 5000,
@@ -109,6 +110,12 @@ export const botService = {
   toggleBot: async (botId) => (await api.post(`/api/admin/bots/${botId}/toggle`)).data,
   deleteBot: async (botId) => (await api.delete(`/api/admin/bots/${botId}`)).data,
   getStats: async (botId, start, end) => (await api.get(`/api/admin/dashboard/stats?bot_id=${botId}&start_date=${start}&end_date=${end}`)).data,
+  
+  startBot: async (botId) => (await api.post(`/api/admin/bots/${botId}/start`)).data,
+  stopBot: async (botId) => (await api.post(`/api/admin/bots/${botId}/stop`)).data,
+  getBotStatus: async (botId) => (await api.get(`/api/admin/bots/${botId}/status`)).data,
+  getQRCode: async (botId) => (await api.get(`/api/admin/bots/${botId}/qr`)).data,
+  verifyConnection: async (botId) => (await api.get(`/api/admin/bots/${botId}/status`)).data
 };
 
 // ============================================================
@@ -121,6 +128,15 @@ export const flowService = {
   addStep: async (botId, stepData) => (await api.post(`/api/admin/bots/${botId}/flow/steps`, stepData)).data,
   updateStep: async (botId, stepId, stepData) => (await api.put(`/api/admin/bots/${botId}/flow/steps/${stepId}`, stepData)).data,
   deleteStep: async (botId, stepId) => (await api.delete(`/api/admin/bots/${botId}/flow/steps/${stepId}`)).data,
+
+  uploadMedia: async (botId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/api/admin/bots/${botId}/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
 };
 
 // ============================================================
@@ -529,23 +545,35 @@ export const miniappService = {
 // 🔐 SERVIÇO DE AUTENTICAÇÃO (🔥 ATUALIZADO PARA TURNSTILE)
 // ============================================================
 export const authService = {
-  // 🔥 ATUALIZADO: Recebe turnstileToken e envia no payload
-  register: async (username, email, password, fullName, turnstileToken) => {
-    const response = await api.post('/api/auth/register', {
-      username,
-      email,
-      password,
-      full_name: fullName,
-      turnstile_token: turnstileToken // 🛡️ NOVO CAMPO
-    });
-    return response.data;
-  },
-  
-  // 🔥 ATUALIZADO: Recebe turnstileToken e envia no payload
+  // 🔥 FIX DO LOGIN: Agora aceita turnstileToken e envia para o backend
   login: async (username, password, turnstileToken) => {
-    const response = await api.post('/api/auth/login', {
-      username,
-      password,
+    try {
+      console.log("📤 [API] Enviando Login com Token:", turnstileToken ? "Sim (Presente)" : "Não");
+      
+      // Enviamos o campo 'turnstile_token' (snake_case) para combinar com o Python
+      const response = await api.post('/api/auth/login', { 
+        username, 
+        password,
+        turnstile_token: turnstileToken 
+      });
+      
+      if (response.data.access_token) {
+        localStorage.setItem('zenyx_token', response.data.access_token);
+        localStorage.setItem('zenyx_admin_user', JSON.stringify(response.data));
+      }
+      return response.data;
+    } catch (error) {
+      console.error("❌ Erro na API de Login:", error);
+      throw error;
+    }
+  },
+
+  register: async (username, email, password, fullName, turnstileToken) => {
+    const response = await api.post('/api/auth/register', { 
+      username, 
+      email, 
+      password, 
+      full_name: fullName,
       turnstile_token: turnstileToken // 🛡️ NOVO CAMPO
     });
     return response.data;
@@ -590,7 +618,7 @@ export const auditService = {
 };
 
 // ============================================================
-// 🔔 SERVIÇO DE NOTIFICAÇÕES (NOVO - ATUALIZAÇÃO DO SITE)
+// 🔔 SERVIÇO DE NOTIFICAÇÕES (NOVO)
 // ============================================================
 export const notificationService = {
   getAll: async (limit = 20) => {
@@ -687,11 +715,11 @@ export const superAdminService = {
   
   updateUser: async (userId, userData) => {
     try {
-        const response = await api.put(`/api/superadmin/users/${userId}`, userData);
-        return response.data;
+      const response = await api.put(`/api/superadmin/users/${userId}`, userData);
+      return response.data;
     } catch (error) {
-        console.error("Erro ao atualizar usuário:", error);
-        throw error;
+      console.error("Erro ao atualizar usuário:", error);
+      throw error;
     }
   },
 };
