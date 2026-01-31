@@ -232,6 +232,18 @@ export function SuperAdmin() {
             </div>
           </button>
 
+          {/* 🆕 NOVO BOTÃO: BOTS DO SISTEMA */}
+          <button 
+            className="action-card"
+            onClick={() => navigate('/superadmin/bots')}
+          >
+            <div className="action-icon"><Bot size={24} /></div>
+            <div className="action-content">
+              <h3>Bots do Sistema</h3>
+              <p>Visão global de todos os robôs da plataforma</p>
+            </div>
+          </button>
+
           <button 
             className="action-card"
             onClick={() => navigate('/audit-logs')}

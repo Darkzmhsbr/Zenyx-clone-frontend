@@ -32,7 +32,8 @@ import { Tracking } from './pages/Tracking';
 import { AuditLogs } from './pages/AuditLogs';
 import { SuperAdmin } from './pages/SuperAdmin';
 import { SuperAdminUsers } from './pages/SuperAdminUsers';
-import { GlobalConfig } from './pages/GlobalConfig'; // 🆕 Importado GlobalConfig
+import { SuperAdminBots } from './pages/SuperAdminBots'; // 🆕 NOVA PÁGINA DE BOTS
+import { GlobalConfig } from './pages/GlobalConfig';
 import { Tutorial } from './pages/Tutorial';
 
 // 🆕 NOVA PÁGINA: Disparo Automático
@@ -211,7 +212,17 @@ function App() {
                 } 
               />
 
-              {/* Configurações Globais (NOVO) */}
+              {/* 🆕 Gestão de Bots (Sistema) */}
+              <Route 
+                path="/superadmin/bots" 
+                element={
+                  <RoleGuard allowedRoles={['SUPER_ADMIN']}>
+                    <SuperAdminBots />
+                  </RoleGuard>
+                } 
+              />
+
+              {/* Configurações Globais */}
               <Route 
                 path="/config" 
                 element={

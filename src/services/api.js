@@ -745,13 +745,41 @@ export const superAdminService = {
     }
   },
 
-  // 👇 🔥 CORREÇÃO: ADICIONADA A FUNÇÃO QUE FALTAVA (sendBroadcast) 🔥
+  // Enviar Broadcast
   sendBroadcast: async (broadcastData) => {
     try {
       const response = await api.post('/api/admin/broadcast', broadcastData);
       return response.data;
     } catch (error) {
       console.error("Erro ao enviar broadcast:", error);
+      throw error;
+    }
+  },
+
+  // 👇 NOVAS FUNÇÕES ADICIONADAS AQUI 👇
+
+  // Listar Todos os Bots do Sistema (Visão de Deus)
+  getAllBots: async (page = 1, limit = 50, search = '', status = '') => {
+    try {
+      const params = new URLSearchParams({ page, per_page: limit });
+      if (search) params.append('search', search);
+      if (status) params.append('status', status);
+      
+      const response = await api.get(`/api/superadmin/bots?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao listar bots do sistema:", error);
+      throw error;
+    }
+  },
+
+  // Deletar Bot Forçado (Ação de Super Admin)
+  deleteBotForce: async (botId) => {
+    try {
+      const response = await api.delete(`/api/superadmin/bots/${botId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao deletar bot forçado:", error);
       throw error;
     }
   }
