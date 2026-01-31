@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { superAdminService } from '../services/api';
 import './SuperAdmin.css';
+import { 
+  Users, Bot, DollarSign, TrendingUp, AlertCircle, RefreshCw, 
+  Settings, ClipboardList, LayoutDashboard 
+} from 'lucide-react';
 
 export function SuperAdmin() {
   const navigate = useNavigate();
@@ -21,6 +25,7 @@ export function SuperAdmin() {
       const data = await superAdminService.getStats();
       
       // ✅ TRANSFORMA OS DADOS DO BACKEND PARA O FORMATO ESPERADO
+      // Mantendo sua estrutura original completa
       const transformedData = {
         users: {
           total: data.total_users || 0,
@@ -36,10 +41,12 @@ export function SuperAdmin() {
         },
         revenue: {
           total: (data.super_admin_revenue || 0) / 100, // ✅ Converte centavos → reais
-          last_30_days: 0, // Backend não retorna isso ainda
+          last_30_days: 0, // Backend não retorna isso ainda (Mantido conforme original)
+          // Mantendo seu cálculo original de média por usuário
           average_per_user: data.total_users > 0 
             ? ((data.super_admin_revenue || 0) / 100) / data.total_users 
-            : 0
+            : 0,
+          total_sales: data.super_admin_sales || 0 // Adicionado para exibir vendas no card de receita
         },
         sales: {
           total: data.super_admin_sales || data.total_sales || 0,
@@ -65,8 +72,8 @@ export function SuperAdmin() {
 
   if (loading) {
     return (
-      <div className="superadmin-container">
-        <div className="superadmin-loading">
+      <div className="super-admin-container">
+        <div className="super-admin-loading">
           <div className="spinner"></div>
           <p>Carregando painel super admin...</p>
         </div>
@@ -76,31 +83,34 @@ export function SuperAdmin() {
 
   if (error) {
     return (
-      <div className="superadmin-container">
-        <div className="superadmin-error">
-          <h2>⚠️ {error}</h2>
-          <p>Somente super-administradores podem acessar esta área.</p>
-          <button onClick={() => navigate('/')} className="btn-back">
-            ← Voltar ao Dashboard
-          </button>
+      <div className="super-admin-container">
+        <div className="super-admin-error">
+          <AlertCircle size={48} color="#ef4444" />
+          <h2>Ops! Algo deu errado.</h2>
+          <p>{error}</p>
+          <div className="error-actions">
+            <button onClick={loadStats} className="btn-retry">
+              <RefreshCw size={16} /> Tentar Novamente
+            </button>
+            <button onClick={() => navigate('/')} className="btn-secondary" style={{marginTop: 10, marginLeft: 10}}>
+              Voltar ao Início
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="superadmin-container">
-      <div className="superadmin-header">
+    <div className="super-admin-container fade-in">
+      <div className="super-admin-header">
         <div className="header-left">
           <h1>👑 Painel Super Admin</h1>
           <p className="superadmin-subtitle">Gerenciamento global do sistema</p>
         </div>
         <div className="header-right">
           <button onClick={loadStats} className="btn-refresh">
-            🔄 Atualizar
-          </button>
-          <button onClick={() => navigate('/superadmin/users')} className="btn-primary">
-            👥 Gerenciar Usuários
+            <RefreshCw size={18} /> Atualizar
           </button>
         </div>
       </div>
@@ -109,7 +119,9 @@ export function SuperAdmin() {
       <div className="stats-grid">
         {/* Card: Usuários */}
         <div className="stat-card users">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon">
+            <Users size={24} />
+          </div>
           <div className="stat-content">
             <h3>Usuários</h3>
             <div className="stat-number">{stats?.users?.total || 0}</div>
@@ -132,7 +144,9 @@ export function SuperAdmin() {
 
         {/* Card: Bots */}
         <div className="stat-card bots">
-          <div className="stat-icon">🤖</div>
+          <div className="stat-icon">
+            <Bot size={24} />
+          </div>
           <div className="stat-content">
             <h3>Bots</h3>
             <div className="stat-number">{stats?.bots?.total || 0}</div>
@@ -154,7 +168,9 @@ export function SuperAdmin() {
 
         {/* Card: Receita Total (SUPER ADMIN) */}
         <div className="stat-card revenue">
-          <div className="stat-icon">💰</div>
+          <div className="stat-icon">
+            <DollarSign size={24} />
+          </div>
           <div className="stat-content">
             <h3>Receita Total (Super Admin)</h3>
             <div className="stat-number">
@@ -178,7 +194,9 @@ export function SuperAdmin() {
 
         {/* Card: Vendas */}
         <div className="stat-card sales">
-          <div className="stat-icon">📈</div>
+          <div className="stat-icon">
+            <TrendingUp size={24} />
+          </div>
           <div className="stat-content">
             <h3>Vendas (Sistema)</h3>
             <div className="stat-number">{stats?.sales?.total || 0}</div>
@@ -199,17 +217,18 @@ export function SuperAdmin() {
       </div>
 
       {/* Ações Rápidas */}
-      <div className="quick-actions">
-        <h2>⚡ Ações Rápidas</h2>
+      <div className="quick-actions-section">
+        <h2>⚡ Acesso Rápido</h2>
         <div className="actions-grid">
+          
           <button 
             className="action-card"
             onClick={() => navigate('/superadmin/users')}
           >
-            <div className="action-icon">👥</div>
+            <div className="action-icon"><Users size={24} /></div>
             <div className="action-content">
               <h3>Gerenciar Usuários</h3>
-              <p>Ver, editar e deletar usuários do sistema</p>
+              <p>Ver, editar, banir e entrar na conta de usuários</p>
             </div>
           </button>
 
@@ -217,34 +236,35 @@ export function SuperAdmin() {
             className="action-card"
             onClick={() => navigate('/audit-logs')}
           >
-            <div className="action-icon">📋</div>
+            <div className="action-icon"><ClipboardList size={24} /></div>
             <div className="action-content">
               <h3>Logs de Auditoria</h3>
-              <p>Ver histórico completo de ações</p>
+              <p>Ver histórico completo de quem fez o quê</p>
             </div>
           </button>
 
           <button 
             className="action-card"
+            onClick={() => navigate('/config')}
+          >
+            <div className="action-icon"><Settings size={24} /></div>
+            <div className="action-content">
+              <h3>Config. Globais</h3>
+              <p>Taxas, Webhooks e integrações do sistema</p>
+            </div>
+          </button>
+
+          <button 
+            className="action-card secondary"
             onClick={() => navigate('/')}
           >
-            <div className="action-icon">📊</div>
+            <div className="action-icon"><LayoutDashboard size={24} /></div>
             <div className="action-content">
-              <h3>Dashboard</h3>
-              <p>Voltar ao painel principal</p>
+              <h3>Ir para Dashboard</h3>
+              <p>Voltar para a visão do usuário comum</p>
             </div>
           </button>
 
-          <button 
-            className="action-card"
-            onClick={loadStats}
-          >
-            <div className="action-icon">🔄</div>
-            <div className="action-content">
-              <h3>Atualizar Dados</h3>
-              <p>Recarregar estatísticas do sistema</p>
-            </div>
-          </button>
         </div>
       </div>
     </div>

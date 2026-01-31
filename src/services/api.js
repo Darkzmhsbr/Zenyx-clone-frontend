@@ -72,7 +72,6 @@ export const publicService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar feed de atividades:', error);
-      // Retorna dados mock em caso de erro
       return {
         activities: [
           { name: "João P.", plan: "Acesso Semanal", price: 2.00, action: "ADICIONADO", icon: "✅" },
@@ -96,6 +95,55 @@ export const publicService = {
         active_users: 1200
       };
     }
+  }
+};
+
+// ============================================================
+// 🔐 SERVIÇO DE AUTENTICAÇÃO (🔥 ATUALIZADO PARA TURNSTILE)
+// ============================================================
+export const authService = {
+  // 🔥 FIX DO LOGIN: Agora aceita turnstileToken e envia para o backend
+  login: async (username, password, turnstileToken) => {
+    try {
+      console.log("📤 [API] Enviando Login com Token:", turnstileToken ? "Sim (Presente)" : "Não");
+      
+      // Enviamos o campo 'turnstile_token' (snake_case) para combinar com o Python
+      const response = await api.post('/api/auth/login', { 
+        username, 
+        password,
+        turnstile_token: turnstileToken 
+      });
+      
+      if (response.data.access_token) {
+        localStorage.setItem('zenyx_token', response.data.access_token);
+        localStorage.setItem('zenyx_admin_user', JSON.stringify(response.data));
+      }
+      return response.data;
+    } catch (error) {
+      console.error("❌ Erro na API de Login:", error);
+      throw error;
+    }
+  },
+
+  register: async (username, email, password, fullName, turnstileToken) => {
+    const response = await api.post('/api/auth/register', { 
+      username, 
+      email, 
+      password, 
+      full_name: fullName,
+      turnstile_token: turnstileToken // 🛡️ NOVO CAMPO
+    });
+    return response.data;
+  },
+  
+  getMe: async () => {
+    const response = await api.get('/api/auth/me');
+    return response.data;
+  },
+
+  updateProfile: async (data) => {
+    const response = await api.put('/api/auth/profile', data);
+    return response.data;
   }
 };
 
@@ -140,7 +188,7 @@ export const flowService = {
 };
 
 // ============================================================
-// 💲 SERVIÇO DE PLANOS
+// 💲 SERVIÇO DE PLANOS E ORDER BUMP
 // ============================================================
 export const planService = {
   listPlans: async (botId) => (await api.get(`/api/admin/bots/${botId}/plans`)).data,
@@ -160,9 +208,6 @@ export const planService = {
   },
 };
 
-// ============================================================
-// 🛒 SERVIÇO DE ORDER BUMP
-// ============================================================
 export const orderBumpService = {
   get: async (botId) => (await api.get(`/api/admin/bots/${botId}/order-bump`)).data,
   save: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data
@@ -313,6 +358,9 @@ export const crmService = {
 export const admin = crmService;
 export const leadService = crmService;
 
+// ============================================================
+// 🔧 ADMIN SERVICE (LEGADO - PARA RETROCOMPATIBILIDADE)
+// ============================================================
 export const adminService = {
     listAdmins: async (id) => { 
       try { return (await api.get(`/api/admin/bots/${id}/admins`)).data } catch { return [] } 
@@ -475,7 +523,7 @@ export const mediaService = {
 };
 
 // ============================================================
-// 📚 SERVIÇO DE TUTORIAIS (NOVO)
+// 📚 SERVIÇO DE TUTORIAIS
 // ============================================================
 export const tutorialService = {
   getTutorials: async () => {
@@ -538,54 +586,18 @@ export const miniappService = {
   
   switchMode: async (botId, mode) => (await api.post(`/api/admin/bots/${botId}/mode`, { modo: mode })).data,
   
-  getPublicData: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data
-};
+  getPublicData: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data,
 
-// ============================================================
-// 🔐 SERVIÇO DE AUTENTICAÇÃO (🔥 ATUALIZADO PARA TURNSTILE)
-// ============================================================
-export const authService = {
-  // 🔥 FIX DO LOGIN: Agora aceita turnstileToken e envia para o backend
-  login: async (username, password, turnstileToken) => {
-    try {
-      console.log("📤 [API] Enviando Login com Token:", turnstileToken ? "Sim (Presente)" : "Não");
-      
-      // Enviamos o campo 'turnstile_token' (snake_case) para combinar com o Python
-      const response = await api.post('/api/auth/login', { 
-        username, 
-        password,
-        turnstile_token: turnstileToken 
-      });
-      
-      if (response.data.access_token) {
-        localStorage.setItem('zenyx_token', response.data.access_token);
-        localStorage.setItem('zenyx_admin_user', JSON.stringify(response.data));
-      }
-      return response.data;
-    } catch (error) {
-      console.error("❌ Erro na API de Login:", error);
-      throw error;
-    }
-  },
+  uploadImage: async (botId, file, type = 'banner') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type); 
 
-  register: async (username, email, password, fullName, turnstileToken) => {
-    const response = await api.post('/api/auth/register', { 
-      username, 
-      email, 
-      password, 
-      full_name: fullName,
-      turnstile_token: turnstileToken // 🛡️ NOVO CAMPO
+    const response = await api.post(`/api/admin/miniapp/${botId}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
-    return response.data;
-  },
-  
-  getMe: async () => {
-    const response = await api.get('/api/auth/me');
-    return response.data;
-  },
-
-  updateProfile: async (data) => {
-    const response = await api.put('/api/auth/profile', data);
     return response.data;
   }
 };
@@ -638,9 +650,10 @@ export const notificationService = {
 };
 
 // ============================================================
-// 👑 SERVIÇO SUPER ADMIN
+// 👑 SERVIÇO SUPER ADMIN (ATUALIZADO)
 // ============================================================
 export const superAdminService = {
+  // Estatísticas Gerais
   getStats: async () => {
     try {
       const response = await api.get('/api/superadmin/stats');
@@ -651,24 +664,22 @@ export const superAdminService = {
     }
   },
 
-  listUsers: async (filters = {}) => {
+  // Listar Usuários (Atualizado para corresponder ao Frontend)
+  getUsers: async (page = 1, limit = 50, search = '', status = '') => {
     try {
-      const params = new URLSearchParams();
-      
-      params.append('page', filters.page || 1);
-      params.append('per_page', filters.per_page || 50);
-      
-      if (filters.search) params.append('search', filters.search);
-      if (filters.status) params.append('status', filters.status);
+      const params = new URLSearchParams({ page, per_page: limit });
+      if (search) params.append('search', search);
+      if (status) params.append('status', status);
       
       const response = await api.get(`/api/superadmin/users?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.error("Erro ao listar usuários:", error);
-      return { data: [], total: 0, page: 1, per_page: 50, total_pages: 0 };
+      throw error;
     }
   },
 
+  // Detalhes do Usuário
   getUserDetails: async (userId) => {
     try {
       const response = await api.get(`/api/superadmin/users/${userId}`);
@@ -679,40 +690,40 @@ export const superAdminService = {
     }
   },
 
+  // Login Impersonado (Entrar na conta do cliente)
+  impersonateUser: async (userId) => {
+    try {
+      const response = await api.post(`/api/superadmin/impersonate/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao realizar login impersonado:", error);
+      throw error;
+    }
+  },
+
+  // Ativar/Desativar Usuário
   updateUserStatus: async (userId, isActive) => {
     try {
-      const response = await api.put(`/api/superadmin/users/${userId}/status`, {
-        is_active: isActive
-      });
+      const response = await api.put(`/api/superadmin/users/${userId}/status`, { is_active: isActive });
       return response.data;
     } catch (error) {
-      console.error("Erro ao atualizar status do usuário:", error);
+      console.error("Erro ao atualizar status:", error);
       throw error;
     }
   },
 
-  deleteUser: async (userId) => {
-    try {
-      const response = await api.delete(`/api/superadmin/users/${userId}`);
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao deletar usuário:", error);
-      throw error;
-    }
-  },
-
+  // Promover/Rebaixar Super Admin
   promoteUser: async (userId, isSuperuser) => {
     try {
-      const response = await api.put(`/api/superadmin/users/${userId}/promote`, {
-        is_superuser: isSuperuser
-      });
+      const response = await api.put(`/api/superadmin/users/${userId}/promote`, { is_superuser: isSuperuser });
       return response.data;
     } catch (error) {
-      console.error("Erro ao promover/rebaixar usuário:", error);
+      console.error("Erro ao promover/rebaixar:", error);
       throw error;
     }
   },
   
+  // Editar Usuário
   updateUser: async (userId, userData) => {
     try {
       const response = await api.put(`/api/superadmin/users/${userId}`, userData);
@@ -722,6 +733,17 @@ export const superAdminService = {
       throw error;
     }
   },
+  
+  // Deletar Usuário (Perigoso)
+  deleteUser: async (userId) => {
+    try {
+      const response = await api.delete(`/api/superadmin/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao deletar usuário:", error);
+      throw error;
+    }
+  }
 };
 
 export default api;
