@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BotProvider } from './context/BotContext';
-import { AuthProvider, useAuth } from './context/AuthContext'; // 🆕 Adicionado useAuth
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { MainLayout } from './layout/MainLayout';
 
 // Autenticação e Landing
@@ -32,6 +32,7 @@ import { Tracking } from './pages/Tracking';
 import { AuditLogs } from './pages/AuditLogs';
 import { SuperAdmin } from './pages/SuperAdmin';
 import { SuperAdminUsers } from './pages/SuperAdminUsers';
+import { GlobalConfig } from './pages/GlobalConfig'; // 🆕 Importado GlobalConfig
 import { Tutorial } from './pages/Tutorial';
 
 // 🆕 NOVA PÁGINA: Disparo Automático
@@ -45,7 +46,7 @@ import { MiniAppPayment } from './pages/miniapp/MiniAppPayment';
 import { MiniAppSuccess } from './pages/miniapp/MiniAppSuccess';
 
 // =========================================================
-// 🆕 COMPONENTE GUARDA DE ROTAS (ROLE GUARD)
+// 🛡️ COMPONENTE GUARDA DE ROTAS (ROLE GUARD)
 // =========================================================
 const RoleGuard = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -54,7 +55,7 @@ const RoleGuard = ({ children, allowedRoles }) => {
     return <div style={{ padding: 40, marginLeft: 260 }}>Verificando permissões...</div>;
   }
 
-  // Se não estiver logado, o MainLayout já trata, mas garantimos aqui
+  // Se não estiver logado, redireciona
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -179,6 +180,8 @@ function App() {
               {/* ======================================================== */}
               {/* 🛡️ ROTAS PROTEGIDAS POR ROLE (SUPER ADMIN) */}
               {/* ======================================================== */}
+              
+              {/* Logs de Auditoria */}
               <Route 
                 path="/audit-logs" 
                 element={
@@ -188,6 +191,7 @@ function App() {
                 } 
               />
               
+              {/* Dashboard Master */}
               <Route 
                 path="/superadmin" 
                 element={
@@ -197,6 +201,7 @@ function App() {
                 } 
               />
               
+              {/* Gestão de Usuários */}
               <Route 
                 path="/superadmin/users" 
                 element={
@@ -205,8 +210,16 @@ function App() {
                   </RoleGuard>
                 } 
               />
-              
-              <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
+
+              {/* Configurações Globais (NOVO) */}
+              <Route 
+                path="/config" 
+                element={
+                  <RoleGuard allowedRoles={['SUPER_ADMIN']}>
+                    <GlobalConfig />
+                  </RoleGuard>
+                } 
+              />
               
               {/* Tutoriais */}
               <Route path="/tutorial" element={<Tutorial />} />
