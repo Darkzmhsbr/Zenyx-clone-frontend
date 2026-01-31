@@ -33,11 +33,21 @@
   color: var(--primary);
 }
 
+/* 🔥 ATUALIZADO: Grid agora suporta mais colunas se necessário */
 .create-plan-form {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr auto;
   gap: 15px;
   align-items: end;
+}
+
+/* 🔥 NOVO: Linha extra para opções avançadas (Canal Destino) */
+.advanced-options-row {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: grid;
+  grid-template-columns: 1fr;
 }
 
 .form-action-btn {
@@ -239,6 +249,10 @@
   }
   
   .modal-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .advanced-options-row {
     grid-template-columns: 1fr;
   }
 }
