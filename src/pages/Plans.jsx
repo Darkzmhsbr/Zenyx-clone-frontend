@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { 
-  Plus, Trash2, Calendar, DollarSign, Edit2, Check, X, Tag, Infinity, Hash, AlertCircle
+  Plus, Trash2, Calendar, DollarSign, Edit2, Check, X, Tag, Infinity, Hash, Info 
 } from 'lucide-react';
 import { planService } from '../services/api';
 import { useBot } from '../context/BotContext'; 
@@ -21,7 +21,7 @@ export function Plans() {
     preco_atual: '',
     dias_duracao: '',
     is_lifetime: false,
-    id_canal_destino: '' // 🔥 NOVO CAMPO: Canal Específico
+    id_canal_destino: '' // 🔥 NOVO CAMPO
   });
 
   // Estado para edição (Modal)
@@ -81,7 +81,7 @@ export function Plans() {
     setEditingPlan({ 
       ...plan,
       is_lifetime: plan.is_lifetime || false,
-      id_canal_destino: plan.id_canal_destino || '' // Carrega valor existente ou vazio
+      id_canal_destino: plan.id_canal_destino || '' 
     });
     setIsEditModalOpen(true);
   };
@@ -193,15 +193,26 @@ export function Plans() {
                 </Button>
               </div>
 
-              {/* 🔥 OPÇÕES AVANÇADAS: CANAL DE DESTINO (EXPANSÍVEL) */}
+              {/* 🔥 OPÇÕES AVANÇADAS: CANAL DE DESTINO */}
               <div className="advanced-options-row">
+                {/* EXPLICAÇÃO VISUAL */}
+                <div className="info-banner">
+                  <Info size={20} />
+                  <div className="info-content">
+                    <h5>Múltiplos Canais / Grupos (Opcional)</h5>
+                    <p>
+                      Deseja que este plano libere acesso a um <b>Canal ou Grupo diferente</b> do padrão do bot? 
+                      <br/>Cole o ID abaixo. Se deixar vazio, o cliente entrará no canal principal.
+                    </p>
+                  </div>
+                </div>
+
                 <Input 
-                  label="Canal VIP Específico (Opcional)" 
-                  placeholder="Ex: -100123456789 (Deixe vazio para usar o padrão do Bot)" 
+                  label="ID do Canal/Grupo de Destino (Ex: -100123456789)" 
+                  placeholder="Deixe vazio para usar o padrão do Bot" 
                   value={newPlan.id_canal_destino}
                   onChange={e => setNewPlan({...newPlan, id_canal_destino: e.target.value})}
                   icon={<Hash size={18}/>}
-                  helper="Se preenchido, este plano dará acesso a este canal específico em vez do canal principal do bot."
                 />
               </div>
 
@@ -224,7 +235,7 @@ export function Plans() {
                       </span>
                       {/* Badge visual se tiver canal customizado */}
                       {plan.id_canal_destino && (
-                        <span className="plan-badge" style={{color: '#3b82f6', marginTop: 4, display:'block'}}>
+                        <span className="plan-badge" style={{color: '#3b82f6', marginTop: 4, display:'block', borderColor: 'rgba(59,130,246,0.3)'}}>
                           <Hash size={10} style={{marginRight:2}}/> Canal Específico
                         </span>
                       )}
@@ -299,13 +310,20 @@ export function Plans() {
 
                   {/* 🔥 BLOCO: Canal Específico (Edição) */}
                   <div style={{marginTop: 15, paddingTop: 15, borderTop: '1px solid #333'}}>
+                    <div className="info-banner" style={{fontSize: '0.8rem', padding: '8px'}}>
+                      <Info size={16} />
+                      <div className="info-content">
+                        <h5>Acesso Diferenciado</h5>
+                        <p>Configure um ID abaixo apenas se quiser desviar o cliente para outro canal.</p>
+                      </div>
+                    </div>
+
                     <Input 
-                      label="Canal VIP Específico (Opcional)" 
+                      label="ID do Canal VIP Específico" 
                       placeholder="Deixe vazio para usar padrão" 
                       value={editingPlan.id_canal_destino}
                       onChange={e => setEditingPlan({...editingPlan, id_canal_destino: e.target.value})}
                       icon={<Hash size={16}/>}
-                      helper="Use para criar planos que dão acesso a canais/grupos diferentes."
                     />
                   </div>
 
