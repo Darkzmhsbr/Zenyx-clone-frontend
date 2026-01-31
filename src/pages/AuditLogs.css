@@ -1,31 +1,102 @@
+/* ========================================
+   CONTAINER E LAYOUT
+======================================== */
 .audit-logs-container {
   padding: 30px;
   margin-top: 70px;
-  margin-left: 260px;
+  margin-left: 260px; /* Sidebar Width */
   background: var(--background);
   min-height: calc(100vh - 70px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 30px;
+}
+
+.header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.header-right {
+  display: flex;
+  gap: 10px;
 }
 
 .audit-header h1 {
   font-size: 28px;
   color: var(--foreground);
-  margin-bottom: 8px;
+  margin-bottom: 5px;
+  font-weight: 700;
+  margin-top: 0;
 }
 
 .audit-subtitle {
   color: var(--muted-foreground);
   font-size: 14px;
+  margin: 0;
 }
 
-/* Filtros */
+/* ========================================
+   BOTÕES DE CABEÇALHO
+======================================== */
+.btn-back {
+  padding: 8px 16px;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+}
+
+.btn-back:hover {
+  background: var(--muted);
+  transform: translateX(-2px);
+}
+
+.btn-refresh {
+  padding: 8px 16px;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+}
+
+.btn-refresh:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ========================================
+   FILTROS
+======================================== */
 .audit-filters {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
 }
@@ -42,34 +113,46 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--muted-foreground);
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .filter-group select,
 .filter-group input {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background: var(--background);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--foreground);
   font-size: 14px;
+  transition: border 0.2s;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  border-color: var(--primary);
+  outline: none;
 }
 
 .filter-actions {
   display: flex;
   gap: 10px;
+  justify-content: flex-end;
 }
 
 .btn-apply,
 .btn-clear {
   padding: 10px 20px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .btn-apply {
@@ -85,23 +168,30 @@
 .btn-clear {
   background: var(--muted);
   color: var(--muted-foreground);
+  border: 1px solid var(--border);
 }
 
 .btn-clear:hover {
-  background: var(--accent);
+  background: var(--background);
+  color: var(--foreground);
 }
 
-/* Loading */
+/* ========================================
+   LOADING E EMPTY STATE
+======================================== */
 .audit-loading {
   text-align: center;
-  padding: 60px;
+  padding: 80px 20px;
   color: var(--muted-foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid var(--border);
+  border: 3px solid rgba(195, 51, 255, 0.3);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -112,35 +202,47 @@
   to { transform: rotate(360deg); }
 }
 
-/* Empty State */
 .audit-empty {
   text-align: center;
-  padding: 60px;
+  padding: 80px 20px;
   color: var(--muted-foreground);
   font-size: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
-/* Stats */
+/* ========================================
+   STATS
+======================================== */
 .audit-stats {
   display: flex;
   justify-content: space-between;
-  padding: 15px;
+  padding: 15px 20px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px 8px 0 0;
+  border-radius: 12px 12px 0 0;
   color: var(--muted-foreground);
   font-size: 14px;
+  border-bottom: none;
 }
 
 .audit-stats strong {
   color: var(--foreground);
 }
 
-/* Tabela */
+/* ========================================
+   TABELA
+======================================== */
 .audit-table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-top: none;
+  border-radius: 0 0 12px 12px; /* Arredonda embaixo se não houver paginação */
+}
+
+/* Se houver paginação, tira arredondamento de baixo */
+.audit-table-wrapper:has(+ .audit-pagination) {
+  border-radius: 0;
 }
 
 .audit-table {
@@ -154,24 +256,26 @@
 }
 
 .audit-table th {
-  padding: 12px 15px;
+  padding: 15px 20px;
   text-align: left;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted-foreground);
   text-transform: uppercase;
   border-bottom: 1px solid var(--border);
+  letter-spacing: 0.5px;
 }
 
 .audit-table td {
-  padding: 12px 15px;
+  padding: 15px 20px;
   border-bottom: 1px solid var(--border);
   color: var(--foreground);
   font-size: 14px;
+  vertical-align: middle;
 }
 
 .audit-table tbody tr:hover {
-  background: var(--accent);
+  background: rgba(195, 51, 255, 0.02);
 }
 
 .log-failed {
@@ -182,12 +286,12 @@
   white-space: nowrap;
   color: var(--muted-foreground);
   font-size: 13px;
+  font-family: monospace;
 }
 
 .log-user {
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
 .user-id {
@@ -196,34 +300,45 @@
 }
 
 .log-description {
-  max-width: 300px;
+  max-width: 350px;
+  line-height: 1.4;
 }
 
 .error-msg {
-  margin-top: 5px;
+  margin-top: 6px;
   font-size: 12px;
   color: #ef4444;
-  padding: 5px 8px;
+  padding: 6px 10px;
   background: rgba(239, 68, 68, 0.1);
-  border-radius: 4px;
+  border-radius: 6px;
+  display: inline-block;
 }
 
-/* Badges */
+/* ========================================
+   BADGES
+======================================== */
 .audit-badge,
 .resource-badge {
-  display: inline-block;
+  display: inline-flex; /* Melhor alinhamento para ícones */
+  align-items: center;
+  gap: 6px;
   padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
   color: white;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .status-success,
 .status-failed {
   font-size: 13px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .status-success {
@@ -240,7 +355,9 @@
   color: var(--muted-foreground);
 }
 
-/* Paginação */
+/* ========================================
+   PAGINAÇÃO
+======================================== */
 .audit-pagination {
   display: flex;
   justify-content: center;
@@ -250,43 +367,64 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-top: none;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 12px 12px;
 }
 
 .btn-page {
   padding: 8px 16px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .btn-page:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .btn-page:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: var(--muted);
 }
 
 .page-info {
   color: var(--muted-foreground);
   font-size: 14px;
+  font-weight: 500;
 }
 
-/* Responsive */
+/* ========================================
+   RESPONSIVE
+======================================== */
 @media (max-width: 1024px) {
   .audit-logs-container {
     margin-left: 0;
     padding: 20px;
+    margin-top: 60px;
   }
   
   .filter-row {
     grid-template-columns: 1fr;
+  }
+
+  .audit-table-wrapper {
+    overflow-x: scroll;
+  }
+
+  .audit-table th, .audit-table td {
+    white-space: nowrap;
+  }
+  
+  .log-description {
+    white-space: normal;
+    min-width: 250px;
   }
 }
