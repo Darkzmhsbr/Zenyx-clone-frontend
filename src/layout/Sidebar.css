@@ -30,198 +30,125 @@
   height: 70px;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Espaça logo e botão X */
+  justify-content: space-between;
   padding: 0 20px;
   border-bottom: 1px solid var(--sidebar-border);
 }
 
-.logo-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
+.logo-text {
   font-size: 1.2rem;
+  font-weight: 700;
   color: #fff;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.5px;
 }
 
-.logo-symbol {
+.logo-highlight {
   color: var(--primary-color);
-  font-size: 1.4rem;
-  filter: drop-shadow(0 0 5px var(--primary-color));
 }
 
-/* --- NAV WRAPPER --- */
+/* --- NAVEGAÇÃO --- */
 .sidebar-nav {
   flex: 1;
+  padding: 20px 10px;
   overflow-y: auto;
-  padding: 20px 12px;
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-/* Esconde Scrollbar mas mantém funcional */
 .sidebar-nav::-webkit-scrollbar {
   width: 4px;
 }
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background-color: #333;
+  background: #333;
   border-radius: 4px;
 }
 
-/* --- MENU LABELS --- */
-.menu-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #555;
-  margin: 15px 0 5px 12px;
-  letter-spacing: 1px;
-}
-
-/* --- NAV ITEMS --- */
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 15px;
   color: var(--text-secondary);
   text-decoration: none;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  gap: 12px;
 }
 
 .nav-item:hover {
   background-color: var(--item-hover);
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .nav-item.active {
-  background-color: var(--primary-glow);
+  background: rgba(195, 51, 255, 0.1);
   color: var(--primary-color);
-  font-weight: 600;
+  border-left: 3px solid var(--primary-color);
 }
 
-.nav-item svg {
-  flex-shrink: 0;
+.nav-item.locked-nav {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* 👑 ESTILO ESPECIAL PARA SUPER ADMIN */
-.nav-item.super-admin-link {
-  color: #f59e0b; /* Laranja/Dourado */
+/* Divisores e Títulos de Seção */
+.divider {
+  height: 1px;
+  background: #222;
+  margin: 10px 0;
 }
 
-.nav-item.super-admin-link:hover {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #fbbf24;
+.menu-section-label {
+  padding: 10px 15px 5px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #555;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
-.nav-item.super-admin-link.active {
-  background-color: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-/* --- SUBMENUS E DROPDOWNS --- */
-.nav-item.has-submenu {
-  justify-content: space-between;
-}
-
-.nav-item-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
+/* Submenu */
 .submenu {
+  margin-left: 20px;
+  padding-left: 10px;
+  border-left: 1px solid #333;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-left: 12px; /* Indentação */
-  padding-left: 12px;
-  border-left: 1px solid #222;
-  margin-top: 5px;
-  margin-bottom: 5px;
-  animation: slideDown 0.2s ease-out;
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .submenu .nav-item {
+  padding: 8px 15px;
   font-size: 0.85rem;
-  padding: 8px 12px;
 }
 
-/* --- BLOQUEADO / LOCKED --- */
-.locked-nav {
-  opacity: 0.5;
-  cursor: not-allowed !important;
-  position: relative;
-}
-
-.locked-nav:hover::after {
-  content: "Crie um bot primeiro";
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  background: #222;
-  color: #fff;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  margin-left: 10px;
-  z-index: 9999;
-  pointer-events: none;
-  border: 1px solid #444;
-}
-
-/* --- DIVIDER --- */
-.divider {
-  height: 1px;
-  background-color: var(--sidebar-border);
-  margin: 10px 0;
-  opacity: 0.5;
-}
-
-/* --- PLAN BADGE (Visual Extra) --- */
-.plan-badge {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  color: #000;
-  font-weight: 800;
-  font-size: 0.65rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: auto;
-}
-
-/* --- FOOTER USER --- */
+/* --- USER FOOTER --- */
 .sidebar-footer {
   padding: 15px;
   border-top: 1px solid var(--sidebar-border);
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  background: #0f0f0f;
 }
 
-.user-avatar-small {
-  width: 32px;
-  height: 32px;
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #c333ff, #7b1fa2);
   border-radius: 50%;
-  background-color: #333;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 0.8rem;
   color: #fff;
+  font-size: 0.9rem;
 }
 
 .user-info {
@@ -242,16 +169,15 @@
 
 /* --- LOGOUT BUTTON --- */
 .logout-btn {
-  margin-top: auto; /* Empurra para o fundo se houver espaço */
+  margin-top: auto;
   color: #ef4444 !important;
 }
 .logout-btn:hover {
   background-color: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.2);
 }
 
 /* ============================================================
-   📱 MOBILE & TABLET 
+   📱 MOBILE & TABLET (CORREÇÃO DO BUG DE DESFOQUE)
    ============================================================ */
 
 /* Botão Fechar (X) - Oculto no Desktop */
@@ -264,35 +190,39 @@
   padding: 5px;
 }
 
-.sidebar-overlay {
-  display: none;
+/* 🔥 CLASSE NOVA: OVERLAY DO MOBILE 🔥 */
+/* Isso garante que o fundo escuro/desfoque só apareça quando a classe existir */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Escurece o fundo */
+  backdrop-filter: blur(4px);           /* O tal desfoque */
+  z-index: 999;                         /* Fica embaixo da sidebar (1000) mas acima de tudo */
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (max-width: 768px) {
   .sidebar {
-    transform: translateX(-100%); /* Escondido por padrão no mobile */
-    width: 280px; /* Um pouco mais largo no mobile para toque */
+    /* Esconde a sidebar jogando ela para a esquerda */
+    transform: translateX(-100%);
+    box-shadow: none;
   }
 
+  /* Quando estiver aberta, traz de volta */
   .sidebar.open {
-    transform: translateX(0); /* Mostra quando open */
-    box-shadow: 5px 0 20px rgba(0,0,0,0.5);
+    transform: translateX(0);
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
   }
 
   .close-sidebar-btn {
-    display: block; /* Aparece só no mobile */
-  }
-
-  /* Overlay escuro quando menu abre */
-  .sidebar-overlay {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(3px);
-    z-index: 999;
+    display: block; /* Mostra o X no mobile */
   }
 }

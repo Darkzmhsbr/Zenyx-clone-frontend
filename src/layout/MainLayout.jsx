@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// 👇 Importa componentes de estrutura
+// Importa componentes de estrutura
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
@@ -30,7 +30,8 @@ export function MainLayout() {
         onToggleMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
       />
       
-      {/* Fundo escuro (Overlay) no mobile ao abrir menu */}
+      {/* 🔥 OVERLAY MOBILE CORRIGIDO 🔥 */}
+      {/* Só aparece se isMobileMenuOpen for TRUE */}
       {isMobileMenuOpen && (
         <div 
           className="mobile-overlay" 
@@ -39,7 +40,7 @@ export function MainLayout() {
       )}
 
       <main>
-        {/* Outlet é onde as páginas (Dashboard, Bots, etc) serão renderizadas */}
+        {/* Outlet é onde as páginas (Dashboard, Bots, etc) são renderizadas */}
         <Outlet />
       </main>
     </div>
